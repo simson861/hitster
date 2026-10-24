@@ -1,0 +1,17 @@
+{
+  "name": "Hitlinie",
+  "short_name": "Hitlinie",
+  "description": "Musik-Zeitstrahl-Partyspiel: Bring die Hits in die richtige Reihenfolge.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#120f1f",
+  "theme_color": "#120f1f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
