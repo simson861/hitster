@@ -542,7 +542,7 @@ function renderSetup() {
       <h2>Spielmodus</h2>
       <div class="seg">
         <button data-act="mode" data-v="0" aria-pressed="${!S.blind}"><strong>Quiz</strong><span>Titel ist sichtbar. Ihr schätzt das Jahr – ganz ohne Ton.</span></button>
-        <button data-act="mode" data-v="1" aria-pressed="${S.blind}"><strong>Blind mit DJ</strong><span>Titel verdeckt. Ein Mitspieler spielt den Song über Spotify oder YouTube.</span></button>
+        <button data-act="mode" data-v="1" aria-pressed="${S.blind}"><strong>Blind mit DJ</strong><span>Titel verdeckt. Ein Mitspieler spielt den Song über Spotify, YouTube oder Apple Music.</span></button>
       </div>
     </div>
     <div class="panel">
@@ -599,6 +599,7 @@ function mysteryHTML() {
   const links = `<div class="links">
       <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">▶ Spotify</a>
       <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ YouTube</a>
+      <a href="https://music.apple.com/search?term=${q}" target="_blank" rel="noopener">▶ Apple Music</a>
     </div>`;
   if (S.phase === 'reveal') {
     return `<div class="mystery revealed" style="border-color:oklch(78% .13 ${hue(s.y)})">
