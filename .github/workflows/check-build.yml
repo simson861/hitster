@@ -9,4 +9,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 build.py
-      - run: git diff --exit-code -- index.html sw.js || { echo "::error::index.html is out of date. Run python3 build.py and commit the result."; exit 1; }
+      - run: git diff --exit-code -- index.html sw.js version.json || { echo "::error::index.html is out of date. Run python3 build.py and commit the result."; exit 1; }

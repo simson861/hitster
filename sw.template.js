@@ -19,6 +19,7 @@ self.addEventListener('fetch', e => {
   const same = url.origin === location.origin;
   const font = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!same && !font) return;
+  if (same && url.pathname.endsWith('/version.json')) return; // always asked from the network by the update check
   const store = res => {
     if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
     return res;
