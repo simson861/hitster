@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hitlinie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#120f1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hitlinie">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<style>
+/* Layout: one-screen app shell — header with scoreboard, scrolling vertical timeline, thumb-reach action bar at the bottom.
+   Single dark "club at night" world by choice; cards take their colour from their decade. */
+:root {
+  --ink: #120f1f;
+  --ink-2: #1c1830;
+  --ink-3: #2a2545;
+  --line: #3a3460;
+  --fg: #f3f0ff;
+  --muted: #a49fc4;
+  --spot: #ffd23f;
+  --good: #3ddc97;
+  --bad: #ff5d73;
+  --display: "Bricolage Grotesque", "Avenir Next Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ink); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--spot); outline-offset: 2px; }
+#app { height: 100%; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; }
+
+/* ---------- shared bits ---------- */
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.btn {
+  border: 0; border-radius: 14px; padding: 15px 18px; font-weight: 700; font-size: 17px;
+  background: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; transition: transform .12s ease, filter .12s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--spot); color: var(--ink); }
+.btn.ghost { background: transparent; border: 2px solid var(--line); }
+.btn.good { background: var(--good); color: var(--ink); }
+.btn[disabled] { opacity: .4; pointer-events: none; }
+.btn.small { min-height: 40px; padding: 8px 12px; font-size: 14px; border-radius: 10px; }
+.vinyl {
+  width: 64px; height: 64px; border-radius: 50%; flex: none;
+  background:
+    radial-gradient(circle, var(--spot) 0 9px, var(--ink) 9px 11px, transparent 11px),
+    repeating-radial-gradient(circle, #0b0915 0 2px, #1d1930 2px 3px);
+  box-shadow: inset 0 0 0 2px #000;
+}
+.spin .vinyl { animation: spin 3s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- setup ---------- */
+.setup { overflow-y: auto; flex: 1; padding-block: 28px 32px; display: flex; flex-direction: column; gap: 26px; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand h1 { font-family: var(--display); font-weight: 800; font-size: 48px; line-height: .9; margin: 0; letter-spacing: -.02em; }
+.brand p { margin: 6px 0 0; color: var(--muted); }
+.spectrum { height: 10px; border-radius: 5px; background: linear-gradient(90deg, oklch(75% .14 200), oklch(78% .15 140), oklch(82% .15 90), oklch(75% .17 40), oklch(70% .19 0), oklch(68% .19 320), oklch(66% .17 270)); }
+.spectrum-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 6px; }
+.panel { background: var(--ink-2); border-radius: 18px; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; }
+.panel h2 { font-family: var(--display); font-size: 22px; margin: 0; }
+.player-row { display: flex; gap: 8px; align-items: center; }
+.player-row input {
+  flex: 1; min-width: 0; background: var(--ink); border: 2px solid var(--line); border-radius: 12px;
+  color: var(--fg); padding: 12px 14px; font: inherit; font-size: 17px;
+}
+.player-row .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--ink-3); font-size: 22px; line-height: 1; flex: none; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg button { border: 2px solid var(--line); background: var(--ink); border-radius: 12px; padding: 12px; text-align: left; display: flex; flex-direction: column; gap: 4px; }
+.seg button strong { font-size: 16px; }
+.seg button span { font-size: 13px; color: var(--muted); line-height: 1.35; }
+.seg button[aria-pressed="true"] { border-color: var(--spot); background: color-mix(in oklab, var(--spot) 12%, var(--ink)); }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
+.genres { display: flex; flex-wrap: wrap; gap: 8px; }
+.genres button { border: 2px solid var(--line); background: var(--ink); border-radius: 999px; padding: 9px 14px; font-weight: 600; font-size: 15px; }
+.genres button[aria-pressed="true"] { border-color: var(--spot); background: color-mix(in oklab, var(--spot) 14%, var(--ink)); }
+.pool-info { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.pool-info.warn { color: var(--bad); }
+.seg.three button { text-align: center; align-items: center; }
+.seg.three strong { font-family: var(--display); font-size: 22px; }
+.resume { border: 2px solid var(--spot); }
+details.help { background: var(--ink-2); border-radius: 18px; padding: 14px 16px; }
+details.help summary { font-weight: 700; cursor: pointer; }
+details.help ol, details.help ul { padding-left: 20px; margin: 10px 0 0; color: var(--muted); line-height: 1.55; }
+details.help li + li { margin-top: 4px; }
+details.help b { color: var(--fg); }
+
+/* ---------- game ---------- */
+.top { padding-block: 12px 10px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--ink-3); }
+.turn { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.turn h2 { font-family: var(--display); font-size: 30px; font-weight: 800; margin: 2px 0 0; line-height: 1; overflow-wrap: anywhere; }
+.scores { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px; }
+.scores::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: flex; align-items: center; gap: 8px; background: var(--ink-2); border-radius: 999px; padding: 6px 12px 6px 8px; font-size: 14px; border: 2px solid transparent; }
+.chip.on { border-color: var(--spot); }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; }
+.chip .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip .tk { color: var(--spot); font-variant-numeric: tabular-nums; }
+
+.board { flex: 1; overflow-y: auto; padding-block: 16px 24px; display: flex; flex-direction: column; gap: 18px; }
+.mystery {
+  border-radius: 20px; padding: 18px; display: flex; gap: 16px; align-items: center;
+  background: linear-gradient(135deg, var(--ink-3), var(--ink-2)); border: 2px dashed var(--line);
+  perspective: 800px;
+}
+.mystery .info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.mystery .artist { color: var(--muted); font-weight: 600; }
+.mystery .title { font-family: var(--display); font-size: 24px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.mystery .hidden-title { font-family: var(--display); font-size: 22px; font-weight: 700; }
+.mystery.revealed { border-style: solid; }
+.links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.links a { color: var(--ink); background: var(--fg); text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px 12px; border-radius: 10px; }
+.peek { background: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.peek-box { font-size: 14px; color: var(--spot); margin-top: 4px; }
+.actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.tl-head { display: flex; justify-content: space-between; align-items: baseline; }
+.tl-head h3 { font-family: var(--display); font-size: 20px; margin: 0; }
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.card {
+  --h: 200;
+  display: grid; grid-template-columns: 78px 1fr; align-items: center; gap: 12px;
+  border-radius: 14px; padding: 12px 14px;
+  background: oklch(78% .13 var(--h)); color: #15111f;
+}
+.card .yr { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+.card .meta { min-width: 0; }
+.card .meta b { display: block; font-size: 16px; line-height: 1.2; overflow-wrap: anywhere; }
+.card .meta span { font-size: 14px; opacity: .78; overflow-wrap: anywhere; }
+.card.new { animation: pop .5s cubic-bezier(.2,1.4,.4,1); box-shadow: 0 0 0 3px var(--fg); }
+@keyframes pop { from { transform: scale(.8); opacity: .3; } }
+
+.slot {
+  border: 0; background: transparent; width: 100%; padding: 4px 0; min-height: 30px;
+  display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; font-weight: 600;
+}
+.slot::before, .slot::after { content: ""; flex: 1; height: 2px; background: var(--line); border-radius: 1px; }
+.slot .plus { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 18px; line-height: 1; }
+.slot:hover .plus { border-color: var(--fg); color: var(--fg); }
+.slot.locked { pointer-events: none; }
+.slot.locked .plus { display: none; }
+.slot.locked::before, .slot.locked::after { background: transparent; }
+.ghost {
+  border-radius: 14px; padding: 12px 14px; margin: 4px 0; display: flex; align-items: center; gap: 12px;
+  border: 2px dashed var(--spot); background: color-mix(in oklab, var(--spot) 10%, var(--ink));
+  font-weight: 700;
+}
+.ghost .q { font-family: var(--display); font-size: 28px; font-weight: 800; width: 66px; color: var(--spot); }
+.ghost.challenger { border-color: var(--fg); background: var(--ink-2); }
+.ghost.challenger .q { color: var(--fg); }
+.ghost.ok { border-style: solid; border-color: var(--good); }
+.ghost.ok .q { color: var(--good); }
+.ghost.no { border-style: solid; border-color: var(--bad); opacity: .85; }
+.ghost.no .q { color: var(--bad); }
+.ghost small { display: block; font-weight: 500; color: var(--muted); font-size: 13px; }
+
+.banner { border-radius: 16px; padding: 14px 16px; font-weight: 700; display: flex; flex-direction: column; gap: 2px; }
+.banner.ok { background: color-mix(in oklab, var(--good) 22%, var(--ink)); }
+.banner.no { background: color-mix(in oklab, var(--bad) 22%, var(--ink)); }
+.banner span { font-weight: 500; color: var(--muted); }
+
+.bar {
+  border-top: 1px solid var(--ink-3); background: var(--ink);
+  padding-block: 12px max(12px, env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.bar .hint { text-align: center; color: var(--muted); font-size: 15px; padding: 14px 0; }
+.bar .row { display: flex; gap: 8px; }
+.bar .row .btn { flex: 1; }
+
+/* ---------- overlays ---------- */
+.overlay { position: fixed; inset: 0; background: color-mix(in oklab, #000 65%, transparent); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
+.sheet {
+  width: 100%; max-width: 560px; background: var(--ink-2); border-radius: 22px 22px 0 0;
+  padding-block: 20px max(20px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 12px; animation: up .25s ease;
+}
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+.sheet h3 { font-family: var(--display); font-size: 24px; margin: 0; }
+.sheet p { margin: 0; color: var(--muted); line-height: 1.45; }
+
+/* ---------- win ---------- */
+.win { flex: 1; overflow-y: auto; padding-block: 36px; display: flex; flex-direction: column; gap: 20px; }
+.win h1 { font-family: var(--display); font-size: 52px; line-height: .95; margin: 0; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.rank { display: flex; flex-direction: column; gap: 8px; }
+.rank div { display: flex; justify-content: space-between; background: var(--ink-2); border-radius: 12px; padding: 12px 14px; font-variant-numeric: tabular-nums; }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div id="app"></div>
+<canvas class="confetti" id="confetti" hidden></canvas>
+
+<script>
+// Jahr | Interpret | Titel | Genres  (Jahr der Single-Veröffentlichung)
+// R Rock · P Pop · D Dance & Elektro · H Hip-Hop & R&B · S Soul, Funk & Disco · K Schlager · G deutschsprachig
+const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
+1956|Freddy Quinn|Heimweh (Dort wo die Blumen blüh'n)|KG
+1957|Elvis Presley|Jailhouse Rock|R
+1958|Chuck Berry|Johnny B. Goode|R
+1958|Ritchie Valens|La Bamba|R
+1959|Freddy Quinn|Die Gitarre und das Meer|KG
+1960|Elvis Presley|It's Now or Never|P
+1960|Lale Andersen|Ein Schiff wird kommen|KG
+1960|Gus Backus|Da sprach der alte Häuptling der Indianer|KG
+1961|Ben E. King|Stand by Me|S
+1961|Ralf Bendix|Babysitter-Boogie|KG
+1961|Nana Mouskouri|Weiße Rosen aus Athen|KG
+1962|Ray Charles|I Can't Stop Loving You|S
+1962|Conny Froboess|Zwei kleine Italiener|KG
+1963|The Beatles|She Loves You|PR
+1963|Manuela|Schuld war nur der Bossa Nova|KG
+1964|The Beatles|A Hard Day's Night|PR
+1964|The Animals|The House of the Rising Sun|R
+1964|Roy Orbison|Oh, Pretty Woman|R
+1964|The Supremes|Baby Love|S
+1965|The Rolling Stones|(I Can't Get No) Satisfaction|R
+1965|Bob Dylan|Like a Rolling Stone|R
+1965|Drafi Deutscher|Marmor, Stein und Eisen bricht|KG
+1965|Udo Jürgens|Siebzehn Jahr, blondes Haar|KG
+1966|The Beach Boys|Good Vibrations|P
+1966|Nancy Sinatra|These Boots Are Made for Walkin'|P
+1966|Roy Black|Ganz in Weiß|KG
+1966|Udo Jürgens|Merci, Chérie|KG
+1967|Procol Harum|A Whiter Shade of Pale|R
+1967|Aretha Franklin|Respect|S
+1967|The Doors|Light My Fire|R
+1967|Marvin Gaye & Tammi Terrell|Ain't No Mountain High Enough|S
+1967|Heintje|Mama|KG
+1968|The Beatles|Hey Jude|PR
+1968|Simon & Garfunkel|Mrs. Robinson|P
+1968|Steppenwolf|Born to Be Wild|R
+1968|Otis Redding|(Sittin' On) The Dock of the Bay|S
+1969|The Beatles|Come Together|R
+1969|Elvis Presley|In the Ghetto|P
+1969|Creedence Clearwater Revival|Proud Mary|R
+1969|Michael Holm|Mendocino|KG
+1970|Simon & Garfunkel|Bridge over Troubled Water|P
+1970|The Jackson 5|ABC|S
+1970|Black Sabbath|Paranoid|R
+1970|James Brown|Get Up (I Feel Like Being a) Sex Machine|S
+1970|Wencke Myhre|Er hat ein knallrotes Gummiboot|KG
+1970|Daliah Lavi|Oh, wann kommst du?|KG
+1971|John Lennon|Imagine|P
+1971|Marvin Gaye|What's Going On|S
+1971|Don McLean|American Pie|P
+1972|Bill Withers|Lean on Me|S
+1972|Alice Cooper|School's Out|R
+1972|Stevie Wonder|Superstition|S
+1972|Rex Gildo|Fiesta Mexicana|KG
+1972|Bata Illic|Michaela|KG
+1972|Christian Anders|Es fährt ein Zug nach Nirgendwo|KG
+1972|Jürgen Marcus|Eine neue Liebe ist wie ein neues Leben|KG
+1972|Heino|Blau blüht der Enzian|KG
+1972|Juliane Werding|Am Tag, als Conny Kramer starb|KG
+1973|Pink Floyd|Money|R
+1973|Deep Purple|Smoke on the Water|R
+1973|Bernd Clüver|Der Junge mit der Mundharmonika|KG
+1973|Cindy & Bert|Immer wieder sonntags|KG
+1974|ABBA|Waterloo|P
+1974|Carl Douglas|Kung Fu Fighting|S
+1974|Kraftwerk|Autobahn|DG
+1974|Udo Jürgens|Griechischer Wein|KG
+1974|Lynyrd Skynyrd|Sweet Home Alabama|R
+1974|Vicky Leandros|Theo, wir fahr'n nach Lodz|KG
+1974|Chris Roberts|Du kannst nicht immer 17 sein|KG
+1975|Queen|Bohemian Rhapsody|R
+1975|ABBA|Mamma Mia|P
+1975|Bruce Springsteen|Born to Run|R
+1975|10cc|I'm Not in Love|P
+1975|Aerosmith|Walk This Way|R
+1975|Marianne Rosenberg|Er gehört zu mir|KG
+1976|ABBA|Dancing Queen|PS
+1976|Elton John & Kiki Dee|Don't Go Breaking My Heart|P
+1976|Boston|More Than a Feeling|R
+1976|Wild Cherry|Play That Funky Music|S
+1976|Udo Jürgens|Aber bitte mit Sahne|KG
+1976|Jürgen Drews|Ein Bett im Kornfeld|KG
+1976|Peter Alexander|Die kleine Kneipe|KG
+1976|Costa Cordalis|Anita|KG
+1977|Bee Gees|Stayin' Alive|S
+1977|Fleetwood Mac|Go Your Own Way|R
+1977|Donna Summer|I Feel Love|SD
+1977|Queen|We Will Rock You|R
+1977|Eagles|Hotel California|R
+1977|Sex Pistols|God Save the Queen|R
+1977|Stevie Wonder|Sir Duke|S
+1978|Boney M.|Rivers of Babylon|S
+1978|Gloria Gaynor|I Will Survive|S
+1978|Village People|Y.M.C.A.|S
+1978|Kate Bush|Wuthering Heights|P
+1978|Earth, Wind & Fire|September|S
+1978|Dire Straits|Sultans of Swing|R
+1979|Pink Floyd|Another Brick in the Wall (Part 2)|R
+1979|The Buggles|Video Killed the Radio Star|P
+1979|Michael Jackson|Don't Stop 'Til You Get Enough|S
+1979|Dschinghis Khan|Dschinghis Khan|KG
+1979|Chic|Good Times|S
+1979|Sister Sledge|We Are Family|S
+1979|The Clash|London Calling|R
+1979|AC/DC|Highway to Hell|R
+1979|The Sugarhill Gang|Rapper's Delight|H
+1980|AC/DC|Back in Black|R
+1980|Queen|Another One Bites the Dust|RS
+1980|Blondie|Call Me|R
+1980|Joy Division|Love Will Tear Us Apart|R
+1980|Diana Ross|Upside Down|S
+1980|Roland Kaiser|Santa Maria|KG
+1980|Peter Maffay|Über sieben Brücken musst du gehn|KG
+1981|Kim Wilde|Kids in America|P
+1981|Depeche Mode|Just Can't Get Enough|PD
+1981|Spider Murphy Gang|Skandal im Sperrbezirk|RG
+1981|Journey|Don't Stop Believin'|R
+1981|BAP|Verdamp lang her|RG
+1982|Survivor|Eye of the Tiger|R
+1982|Trio|Da Da Da|PG
+1982|Toto|Africa|PR
+1982|Markus|Ich will Spaß|PG
+1982|Nicole|Ein bißchen Frieden|KG
+1982|The Clash|Should I Stay or Should I Go|R
+1982|Udo Jürgens|Ich war noch niemals in New York|KG
+1983|Michael Jackson|Billie Jean|P
+1983|Nena|99 Luftballons|PG
+1983|Eurythmics|Sweet Dreams (Are Made of This)|PD
+1983|Peter Schilling|Major Tom (Völlig losgelöst)|PG
+1983|Cyndi Lauper|Girls Just Want to Have Fun|P
+1983|The Police|Every Breath You Take|R
+1983|New Order|Blue Monday|D
+1983|Udo Lindenberg|Sonderzug nach Pankow|RG
+1983|Wolfgang Petry|Wahnsinn|KG
+1984|Wham!|Wake Me Up Before You Go-Go|P
+1984|Prince|Purple Rain|PR
+1984|Herbert Grönemeyer|Männer|PRG
+1984|Alphaville|Forever Young|P
+1984|Band Aid|Do They Know It's Christmas?|P
+1984|Bruce Springsteen|Dancing in the Dark|R
+1984|Tina Turner|What's Love Got to Do with It|P
+1984|Modern Talking|You're My Heart, You're My Soul|PD
+1984|Van Halen|Jump|R
+1984|Howard Carpendale|Hello Again|KG
+1985|a-ha|Take On Me|P
+1985|Dire Straits|Money for Nothing|R
+1985|Falco|Rock Me Amadeus|PG
+1985|Simple Minds|Don't You (Forget About Me)|R
+1986|Bon Jovi|Livin' on a Prayer|R
+1986|Europe|The Final Countdown|R
+1986|Peter Gabriel|Sledgehammer|P
+1986|Madonna|Papa Don't Preach|P
+1986|Run-D.M.C. feat. Aerosmith|Walk This Way|HR
+1987|Rick Astley|Never Gonna Give You Up|P
+1987|Whitney Houston|I Wanna Dance with Somebody|P
+1987|Michael Jackson|Bad|P
+1987|U2|With or Without You|R
+1987|Def Leppard|Pour Some Sugar on Me|R
+1988|Guns N' Roses|Sweet Child o' Mine|R
+1988|Bobby McFerrin|Don't Worry, Be Happy|P
+1988|Tracy Chapman|Fast Car|P
+1989|Madonna|Like a Prayer|P
+1989|Roxette|The Look|PR
+1989|Technotronic|Pump Up the Jam|D
+1989|Tina Turner|The Best|PR
+1989|The Cure|Lovesong|R
+1990|MC Hammer|U Can't Touch This|H
+1990|Sinéad O'Connor|Nothing Compares 2 U|P
+1990|Snap!|The Power|DH
+1990|Vanilla Ice|Ice Ice Baby|H
+1990|Deee-Lite|Groove Is in the Heart|D
+1990|Matthias Reim|Verdammt, ich lieb' dich|KG
+1991|Nirvana|Smells Like Teen Spirit|R
+1991|R.E.M.|Losing My Religion|R
+1991|Bryan Adams|(Everything I Do) I Do It for You|PR
+1991|Scorpions|Wind of Change|R
+1991|Metallica|Enter Sandman|R
+1992|Whitney Houston|I Will Always Love You|P
+1992|Die Fantastischen Vier|Die Da!?!|HG
+1992|Dr. Alban|It's My Life|D
+1992|Eric Clapton|Tears in Heaven|P
+1992|Snap!|Rhythm Is a Dancer|D
+1992|Red Hot Chili Peppers|Under the Bridge|R
+1992|Rage Against the Machine|Killing in the Name|R
+1993|4 Non Blondes|What's Up?|R
+1993|Haddaway|What Is Love|D
+1993|Meat Loaf|I'd Do Anything for Love (But I Won't Do That)|R
+1993|Dr. Dre feat. Snoop Doggy Dogg|Nuthin' but a 'G' Thang|H
+1993|Die Ärzte|Schrei nach Liebe|RG
+1994|Mariah Carey|All I Want for Christmas Is You|P
+1994|Scatman John|Scatman (Ski-Ba-Bop-Ba-Dop-Bop)|D
+1994|Lucilectric|Mädchen|PG
+1994|The Cranberries|Zombie|R
+1994|Green Day|Basket Case|R
+1995|Coolio|Gangsta's Paradise|H
+1995|Oasis|Wonderwall|R
+1995|TLC|Waterfalls|H
+1995|Michael Jackson|Earth Song|P
+1995|Alanis Morissette|You Oughta Know|R
+1995|Faithless|Insomnia|D
+1996|Spice Girls|Wannabe|P
+1996|Fugees|Killing Me Softly|H
+1996|Mr. President|Coco Jamboo|D
+1997|Aqua|Barbie Girl|PD
+1997|The Verve|Bitter Sweet Symphony|R
+1997|Hanson|MMMBop|P
+1997|Puff Daddy feat. Faith Evans|I'll Be Missing You|H
+1997|Céline Dion|My Heart Will Go On|P
+1997|Backstreet Boys|As Long as You Love Me|P
+1997|Radiohead|Karma Police|R
+1997|Rammstein|Du hast|RG
+1998|Britney Spears|...Baby One More Time|P
+1998|Cher|Believe|PD
+1998|The Offspring|Pretty Fly (for a White Guy)|R
+1998|Lauryn Hill|Doo Wop (That Thing)|H
+1998|ATB|9 PM (Till I Come)|D
+1998|Guildo Horn|Guildo hat euch lieb!|KG
+1999|Lou Bega|Mambo No. 5 (A Little Bit of...)|P
+1999|Ricky Martin|Livin' la Vida Loca|P
+1999|Christina Aguilera|Genie in a Bottle|P
+1999|TLC|No Scrubs|H
+1999|Red Hot Chili Peppers|Scar Tissue|R
+1999|Alice Deejay|Better Off Alone|D
+1999|DJ Ötzi|Anton aus Tirol|KG
+2000|Eminem|The Real Slim Shady|H
+2000|Modjo|Lady (Hear Me Tonight)|D
+2000|Daft Punk|One More Time|D
+2000|Britney Spears|Oops!... I Did It Again|P
+2000|DJ Ötzi|Hey Baby (Uhh, Ahh)|K
+2001|Shakira|Whenever, Wherever|P
+2001|Kylie Minogue|Can't Get You Out of My Head|PD
+2001|Linkin Park|In the End|R
+2001|The Strokes|Last Nite|R
+2001|Rammstein|Sonne|RG
+2001|Andrea Berg|Du hast mich tausendmal belogen|KG
+2002|Eminem|Lose Yourself|H
+2002|Avril Lavigne|Complicated|P
+2002|Las Ketchup|The Ketchup Song (Aserejé)|P
+2002|Red Hot Chili Peppers|By the Way|R
+2002|Nelly feat. Kelly Rowland|Dilemma|H
+2003|Beyoncé|Crazy in Love|H
+2003|OutKast|Hey Ya!|H
+2003|The Black Eyed Peas|Where Is the Love?|H
+2003|The White Stripes|Seven Nation Army|R
+2003|Evanescence|Bring Me to Life|R
+2003|50 Cent|In da Club|H
+2004|Usher|Yeah!|H
+2004|Green Day|American Idiot|R
+2004|Kelly Clarkson|Since U Been Gone|P
+2004|Franz Ferdinand|Take Me Out|R
+2004|Eric Prydz|Call on Me|D
+2005|Gorillaz|Feel Good Inc.|HR
+2005|Daniel Powter|Bad Day|P
+2005|Tokio Hotel|Durch den Monsun|RG
+2005|Wir sind Helden|Nur ein Wort|RG
+2005|Foo Fighters|Best of You|R
+2005|Arctic Monkeys|I Bet You Look Good on the Dancefloor|R
+2006|Gnarls Barkley|Crazy|S
+2006|Shakira|Hips Don't Lie|P
+2006|Amy Winehouse|Rehab|S
+2006|Sportfreunde Stiller|'54, '74, '90, 2006|RG
+2006|Justin Timberlake|SexyBack|P
+2006|Nelly Furtado|Maneater|P
+2007|Rihanna|Umbrella|PH
+2007|Timbaland feat. OneRepublic|Apologize|P
+2007|Foo Fighters|The Pretender|R
+2007|Kanye West|Stronger|H
+2007|DJ Ötzi & Nik P.|Ein Stern (...der deinen Namen trägt)|KG
+2008|Lady Gaga|Poker Face|PD
+2008|Katy Perry|I Kissed a Girl|P
+2008|Coldplay|Viva la Vida|P
+2008|Kings of Leon|Sex on Fire|R
+2008|Peter Fox|Alles neu|HG
+2008|Duffy|Mercy|S
+2009|The Black Eyed Peas|I Gotta Feeling|PD
+2009|Lady Gaga|Bad Romance|PD
+2009|Taylor Swift|You Belong with Me|P
+2010|Lena|Satellite|P
+2010|Katy Perry|California Gurls|P
+2010|Bruno Mars|Grenade|P
+2010|Eminem feat. Rihanna|Love the Way You Lie|H
+2011|Adele|Someone Like You|P
+2011|LMFAO|Party Rock Anthem|D
+2011|Gotye|Somebody That I Used to Know|P
+2011|David Guetta feat. Sia|Titanium|D
+2011|Andreas Gabalier|I sing a Liad für di|KG
+2012|PSY|Gangnam Style|P
+2012|Cro|Easy|HG
+2012|Macklemore & Ryan Lewis|Thrift Shop|H
+2012|Imagine Dragons|Radioactive|R
+2012|Die Toten Hosen|Tage wie diese|RG
+2012|Sido|Bilder im Kopf|HG
+2013|Daft Punk|Get Lucky|DS
+2013|Avicii|Wake Me Up|D
+2013|Pharrell Williams|Happy|PS
+2013|Helene Fischer|Atemlos durch die Nacht|KG
+2013|Arctic Monkeys|Do I Wanna Know?|R
+2013|Beatrice Egli|Mein Herz|KG
+2014|Taylor Swift|Shake It Off|P
+2014|Mark Ronson feat. Bruno Mars|Uptown Funk|PS
+2014|Andreas Bourani|Auf uns|PG
+2014|Sam Smith|Stay with Me|P
+2014|Robin Schulz|Prayer in C|D
+2015|Adele|Hello|P
+2015|Major Lazer & DJ Snake|Lean On|D
+2015|Twenty One Pilots|Stressed Out|P
+2015|Alan Walker|Faded|D
+2015|Andreas Gabalier|Hulapalu|KG
+2016|The Chainsmokers feat. Halsey|Closer|D
+2016|Drake|One Dance|H
+2016|Kerstin Ott|Die immer lacht|KG
+2017|Ed Sheeran|Shape of You|P
+2017|Luis Fonsi feat. Daddy Yankee|Despacito|P
+2017|Imagine Dragons|Believer|R
+2017|Camila Cabello|Havana|P
+2017|Dua Lipa|New Rules|P
+2018|Ariana Grande|thank u, next|P
+2018|Drake|God's Plan|H
+2019|Billie Eilish|bad guy|P
+2019|The Weeknd|Blinding Lights|PD
+2020|Dua Lipa|Levitating|PD
+2020|BTS|Dynamite|P
+2020|Jason Derulo|Savage Love|P
+2021|Olivia Rodrigo|drivers license|P
+2021|Lil Nas X|MONTERO (Call Me by Your Name)|PH
+2021|Ed Sheeran|Bad Habits|P
+2021|The Kid LAROI & Justin Bieber|STAY|P
+2021|Måneskin|Zitti e buoni|R
+2022|Harry Styles|As It Was|P
+2022|Lizzo|About Damn Time|PS
+2022|Nina Chuba|Wildberry Lillet|HG
+2023|Miley Cyrus|Flowers|P
+2023|Doja Cat|Paint the Town Red|H
+2023|Tate McRae|greedy|P
+2023|SZA|Kill Bill|H
+2024|Sabrina Carpenter|Espresso|P
+2024|Chappell Roan|Good Luck, Babe!|P
+2024|Billie Eilish|Birds of a Feather|P
+2024|Lady Gaga & Bruno Mars|Die with a Smile|P
+2024|Benson Boone|Beautiful Things|P
+2024|ROSÉ & Bruno Mars|APT.|P
+2024|Kendrick Lamar|Not Like Us|H
+2025|Alex Warren|Ordinary|P`;
+
+const SONGS = RAW.split('\n').map(l => { const [y, a, t, g] = l.split('|'); return { y: +y, a, t, g }; });
+const GENRES = [['R', 'Rock'], ['P', 'Pop'], ['D', 'Dance & Elektro'], ['H', 'Hip-Hop & R&B'], ['S', 'Soul, Funk & Disco'], ['K', 'Schlager'], ['G', 'Deutschsprachig']];
+const genreName = gs => gs.length ? gs.map(g => GENRES.find(x => x[0] === g)[1]).join(' + ') : 'Alle Genres';
+// no genre picked means all songs; several genres combine (Rock + Pop = every song that is either)
+const pool = gs => SONGS.map((_, i) => i).filter(i => !gs.length || gs.some(g => SONGS[i].g.includes(g)));
+const PCOL = ['#ffd23f', '#5ce1e6', '#ff7ab6', '#9b8cff', '#3ddc97', '#ff9f43', '#f5f5f5', '#ff5d73'];
+const START_TOKENS = 2, MAX_TOKENS = 5;
+const KEY = 'hitlinie-v1';
+
+const $app = document.getElementById('app');
+let S;              // game state
+let ui = { menu: false, pickChallenger: false, peek: false };
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hue = y => ((200 - (y - 1950) * 3.9) % 360 + 360) % 360;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sorted = cards => cards.slice().sort((x, y) => SONGS[x].y - SONGS[y].y);
+
+// a game in progress and the setup form are stored apart, so opening the setup never overwrites a running game
+function save() { try { localStorage.setItem(S.screen === 'setup' ? KEY + '-setup' : KEY, JSON.stringify(S)); } catch (e) {} }
+function load(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+
+function freshSetup(prev) {
+  return {
+    screen: 'setup',
+    names: prev?.names || ['Spieler 1', 'Spieler 2'],
+    target: prev?.target || 10,
+    blind: prev?.blind ?? false,
+    genres: prev?.genres || [],
+  };
+}
+
+function startGame() {
+  const names = S.names.map((n, i) => n.trim() || `Spieler ${i + 1}`);
+  const deck = shuffle(pool(S.genres));
+  const players = names.map(name => ({ name, cards: [deck.pop()], tokens: START_TOKENS }));
+  S = { screen: 'game', names, target: S.target, blind: S.blind, genres: S.genres, players, deck, current: 0, round: 1 };
+  newTurn(true);
+}
+
+function newTurn(first) {
+  if (!first) S.current = (S.current + 1) % S.players.length;
+  if (!S.deck.length) { finish(); return; }
+  Object.assign(S, { card: S.deck.pop(), phase: 'place', slot: null, challenger: null, cslot: null, result: null, bonus: false });
+  ui.peek = false;
+}
+
+function fits(cards, slot, y) {
+  const c = sorted(cards);
+  const lo = slot === 0 || SONGS[c[slot - 1]].y <= y;
+  const hi = slot === c.length || y <= SONGS[c[slot]].y;
+  return lo && hi;
+}
+
+function reveal() {
+  const p = S.players[S.current];
+  const y = SONGS[S.card].y;
+  const ok = fits(p.cards, S.slot, y);
+  let cOk = false;
+  if (S.challenger != null) {
+    S.players[S.challenger].tokens--;
+    cOk = !ok && fits(p.cards, S.cslot, y);
+  }
+  if (ok) p.cards.push(S.card);
+  else if (cOk) S.players[S.challenger].cards.push(S.card);
+  S.result = { ok, cOk, winner: ok ? S.current : cOk ? S.challenger : null };
+  S.phase = 'reveal';
+}
+
+function finish() {
+  S.screen = 'win';
+}
+
+function leader() {
+  return S.players.findIndex(p => p.cards.length >= S.target);
+}
+
+/* ---------------- render ---------------- */
+
+function render() {
+  if (S.screen === 'setup') renderSetup();
+  else if (S.screen === 'game') renderGame();
+  else renderWin();
+  save();
+}
+
+function renderSetup() {
+  const saved = load();
+  const canResume = saved && saved.screen === 'game';
+  const count = pool(S.genres).length;
+  const short = count < S.names.length + 5;
+  $app.innerHTML = `
+  <div class="setup wrap">
+    <div class="brand">
+      <div class="vinyl"></div>
+      <div><h1>Hitlinie</h1><p>Wer bringt die Hits in die richtige Reihenfolge?</p></div>
+    </div>
+    <div>
+      <div class="spectrum"></div>
+      <div class="spectrum-labels"><span>1956</span><span>1970</span><span>1985</span><span>2000</span><span>2025</span></div>
+    </div>
+    ${canResume ? `
+    <div class="panel resume">
+      <h2>Laufendes Spiel</h2>
+      <p style="margin:0;color:var(--muted)">${esc(saved.players.map(p => `${p.name} ${p.cards.length}`).join(' · '))}</p>
+      <button class="btn primary" data-act="resume">Weiterspielen</button>
+    </div>` : ''}
+    <div class="panel">
+      <h2>Mitspieler</h2>
+      ${S.names.map((n, i) => `
+        <div class="player-row">
+          <span class="dot" style="background:${PCOL[i % PCOL.length]}"></span>
+          <input id="name-${i}" data-name="${i}" value="${esc(n)}" maxlength="18" autocomplete="off" aria-label="Name Spieler ${i + 1}">
+          ${S.names.length > 1 ? `<button class="icon-btn" data-act="del" data-i="${i}" aria-label="Spieler entfernen">×</button>` : ''}
+        </div>`).join('')}
+      ${S.names.length < 8 ? `<button class="btn ghost" data-act="add">+ Spieler hinzufügen</button>` : ''}
+    </div>
+    <div class="panel">
+      <h2>Spielmodus</h2>
+      <div class="seg">
+        <button data-act="mode" data-v="0" aria-pressed="${!S.blind}"><strong>Quiz</strong><span>Titel ist sichtbar. Ihr schätzt das Jahr – ganz ohne Ton.</span></button>
+        <button data-act="mode" data-v="1" aria-pressed="${S.blind}"><strong>Blind mit DJ</strong><span>Titel verdeckt. Ein Mitspieler spielt den Song über Spotify, YouTube oder Apple Music.</span></button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Genre</h2>
+      <div class="genres">
+        <button data-act="genre" data-v="" aria-pressed="${!S.genres.length}">Alle</button>
+        ${GENRES.map(([k, n]) => `<button data-act="genre" data-v="${k}" aria-pressed="${S.genres.includes(k)}">${esc(n)}</button>`).join('')}
+      </div>
+      <p class="pool-info ${short ? 'warn' : ''}">${count} Songs${S.genres.length > 1 ? ' (mehrere Genres werden kombiniert)' : ''}${short ? ` · Zu wenige für ${S.names.length} Spieler, wählt ein weiteres Genre dazu.` : count < S.names.length * S.target * 2 ? ' · Tipp: weniger Karten zum Sieg wählen.' : ''}</p>
+    </div>
+    <div class="panel">
+      <h2>Karten zum Sieg</h2>
+      <div class="seg three">
+        ${[5, 10, 15].map(n => `<button data-act="target" data-v="${n}" aria-pressed="${S.target === n}"><strong>${n}</strong></button>`).join('')}
+      </div>
+    </div>
+    <button class="btn primary" data-act="start" ${short ? 'disabled' : ''}>Spiel starten</button>
+    <details class="help">
+      <summary>So wird gespielt</summary>
+      <ol>
+        <li>Jeder startet mit einer aufgedeckten Karte im eigenen Zeitstrahl.</li>
+        <li>Wer am Zug ist, ordnet den neuen Song zeitlich ein: davor, dazwischen oder danach.</li>
+        <li>Richtig? Die Karte bleibt liegen. Falsch? Sie fliegt raus.</li>
+        <li><b>Token</b>: Im Blind-Modus gibt es einen für Titel + Interpret, im Quiz-Modus für das exakte Jahr. Ein Token überspringt einen Song.</li>
+        <li><b>Einspruch!</b> Glaubt ein Mitspieler, dass du falsch liegst, setzt er einen Token und wählt eine andere Lücke. Liegt er richtig und du falsch, bekommt er die Karte.</li>
+        <li>Wer zuerst ${S.target} Karten hat, gewinnt.</li>
+      </ol>
+    </details>
+    <details class="help">
+      <summary>Als App auf den Startbildschirm</summary>
+      <ul>
+        <li><b>iPhone (Safari):</b> Teilen-Symbol → „Zum Home-Bildschirm“.</li>
+        <li><b>Android (Chrome):</b> Menü ⋮ → „Zum Startbildschirm hinzufügen“.</li>
+        <li>Ein laufendes Spiel wird auf diesem Gerät gespeichert und lässt sich später fortsetzen.</li>
+      </ul>
+    </details>
+    <p class="eyebrow" style="text-align:center">${SONGS.length} Songs insgesamt · 1956 bis 2025</p>
+  </div>`;
+}
+
+function chips() {
+  return S.players.map((p, i) => `
+    <div class="chip ${i === S.current ? 'on' : ''}">
+      <span class="dot" style="background:${PCOL[i % PCOL.length]}"></span>
+      <span>${esc(p.name)}</span>
+      <span class="n">${p.cards.length}/${S.target}</span>
+      <span class="tk" aria-label="${p.tokens} Token">● ${p.tokens}</span>
+    </div>`).join('');
+}
+
+function cardHTML(i, isNew) {
+  const s = SONGS[i];
+  return `<div class="card ${isNew ? 'new' : ''}" style="--h:${hue(s.y)}">
+    <div class="yr">${s.y}</div>
+    <div class="meta"><b>${esc(s.t)}</b><span>${esc(s.a)}</span></div>
+  </div>`;
+}
+
+function mysteryHTML() {
+  const s = SONGS[S.card];
+  const q = encodeURIComponent(`${s.a} ${s.t}`);
+  const links = `<div class="links">
+      <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">▶ Spotify</a>
+      <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ YouTube</a>
+      <a href="https://music.apple.com/search?term=${q}" target="_blank" rel="noopener">▶ Apple Music</a>
+    </div>`;
+  if (S.phase === 'reveal') {
+    return `<div class="mystery revealed" style="border-color:oklch(78% .13 ${hue(s.y)})">
+      <div class="vinyl"></div>
+      <div class="info">
+        <span class="eyebrow" style="color:oklch(82% .13 ${hue(s.y)})">${s.y}</span>
+        <span class="title">${esc(s.t)}</span>
+        <span class="artist">${esc(s.a)}</span>
+        ${links}
+      </div>
+    </div>`;
+  }
+  if (S.blind) {
+    return `<div class="mystery spin">
+      <div class="vinyl"></div>
+      <div class="info">
+        <span class="eyebrow">Neuer Song</span>
+        <span class="hidden-title">Wer singt das?</span>
+        <span class="artist">DJ: Song öffnen, Handy wegdrehen, abspielen.</span>
+        ${links}
+        <button class="peek" data-peek>Gedrückt halten: Titel für DJ zeigen</button>
+        <div class="peek-box" id="peekbox" ${ui.peek ? '' : 'hidden'}>${esc(s.a)} – ${esc(s.t)}</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="mystery spin">
+    <div class="vinyl"></div>
+    <div class="info">
+      <span class="eyebrow">In welchem Jahr?</span>
+      <span class="title">${esc(s.t)}</span>
+      <span class="artist">${esc(s.a)}</span>
+      ${links}
+    </div>
+  </div>`;
+}
+
+function timelineHTML() {
+  const p = S.players[S.current];
+  const cards = sorted(p.cards);
+  const ph = S.phase;
+  const choosing = ph === 'place' || ph === 'challenge';
+  const ch = S.challenger != null ? S.players[S.challenger] : null;
+  const y = SONGS[S.card].y;
+  const ghost = (slot) => {
+    let out = '';
+    if (ph !== 'reveal' || !S.result.ok) {
+      if (S.slot === slot && ph !== 'reveal') {
+        out += `<div class="ghost"><span class="q">?</span><div>${esc(p.name)}<small>${ph === 'place' ? 'Hier einordnen?' : 'eingeloggt'}</small></div></div>`;
+      }
+    }
+    if (ph === 'reveal' && S.slot === slot && !S.result.ok) {
+      out += `<div class="ghost no"><span class="q">✗</span><div>${esc(p.name)}<small>falsch eingeordnet</small></div></div>`;
+    }
+    if (ch && S.cslot === slot) {
+      if (ph === 'reveal') {
+        const ok = fits(p.cards.filter(c => c !== S.card), slot, y);
+        out += `<div class="ghost challenger ${ok ? 'ok' : 'no'}"><span class="q">${ok ? '✓' : '✗'}</span><div>${esc(ch.name)}<small>Einspruch</small></div></div>`;
+      } else {
+        out += `<div class="ghost challenger"><span class="q">!</span><div>${esc(ch.name)}<small>Einspruch</small></div></div>`;
+      }
+    }
+    return out;
+  };
+  const slotBtn = (i) => {
+    const taken = ph === 'challenge' && i === S.slot;
+    if (!choosing || taken) return `<div class="slot locked"></div>`;
+    const label = i === 0 ? 'davor' : i === cards.length ? 'danach' : 'dazwischen';
+    return `<button class="slot" data-act="slot" data-i="${i}" aria-label="Hier einordnen: ${label}"><span class="plus">+</span></button>`;
+  };
+  // in reveal the new card is already part of the timeline when correct
+  const shown = ph === 'reveal' ? sorted(p.cards) : cards;
+  const base = ph === 'reveal' ? cards.filter(c => c !== S.card) : cards;
+  let html = '';
+  if (ph === 'reveal') {
+    // render final timeline, plus wrong guesses at their original slot positions (based on timeline without the new card)
+    let bi = 0;
+    for (let i = 0; i <= base.length; i++) {
+      html += ghost(i);
+      if (i < base.length) {
+        // inject the newly won card right where it belongs
+        while (shown[bi] !== base[i]) { html += cardHTML(shown[bi], true); bi++; }
+        html += cardHTML(base[i]); bi++;
+      }
+    }
+    while (bi < shown.length) { html += cardHTML(shown[bi], true); bi++; }
+  } else {
+    for (let i = 0; i <= cards.length; i++) {
+      html += S.slot === i || S.cslot === i ? ghost(i) : slotBtn(i);
+      if (i < cards.length) html += cardHTML(cards[i]);
+    }
+  }
+  return html;
+}
+
+function bannerHTML() {
+  if (S.phase !== 'reveal') return '';
+  const s = SONGS[S.card];
+  const p = S.players[S.current];
+  const r = S.result;
+  if (r.ok) return `<div class="banner ok">Richtig, ${esc(p.name)}! <span>„${esc(s.t)}“ kam ${s.y} raus. Die Karte bleibt im Zeitstrahl.</span></div>`;
+  if (r.cOk) return `<div class="banner ok">Einspruch erfolgreich! ${esc(S.players[S.challenger].name)} schnappt sich die Karte. <span>Der Song ist von ${s.y}.</span></div>`;
+  return `<div class="banner no">Daneben. <span>Der Song ist von ${s.y}. Die Karte fliegt raus.</span></div>`;
+}
+
+function barHTML() {
+  const p = S.players[S.current];
+  if (S.phase === 'place') {
+    if (S.slot == null) return `<div class="hint">Tippe auf eine Lücke im Zeitstrahl.</div>`;
+    return `<div class="row"><button class="btn ghost" data-act="unslot">Ändern</button><button class="btn primary" data-act="lock">Einloggen</button></div>`;
+  }
+  if (S.phase === 'locked') {
+    const canChallenge = S.players.some((q, i) => i !== S.current && q.tokens > 0);
+    return `<div class="row">
+      ${canChallenge ? `<button class="btn ghost" data-act="challenge">Einspruch!</button>` : ''}
+      <button class="btn primary" data-act="reveal">Aufdecken</button>
+    </div>`;
+  }
+  if (S.phase === 'challenge') {
+    const ch = S.players[S.challenger];
+    if (S.cslot == null) return `<div class="row"><button class="btn ghost" data-act="cancelChallenge">Abbrechen</button></div><div class="hint" style="padding:4px 0">${esc(ch.name)}: Wähle eine andere Lücke.</div>`;
+    return `<div class="row"><button class="btn ghost" data-act="uncslot">Ändern</button><button class="btn primary" data-act="reveal">Aufdecken</button></div>`;
+  }
+  // reveal
+  const won = leader();
+  const bonusLabel = S.blind ? 'Titel + Interpret erraten' : 'Exaktes Jahr genannt';
+  return `
+    ${!S.bonus && p.tokens < MAX_TOKENS ? `<button class="btn ghost" data-act="bonus">${bonusLabel}: +1 Token für ${esc(p.name)}</button>` : ''}
+    ${S.bonus ? `<div class="hint" style="padding:4px 0">+1 Token für ${esc(p.name)}</div>` : ''}
+    <button class="btn primary" data-act="next">${won >= 0 ? 'Zur Siegerehrung' : `Weiter: ${esc(S.players[(S.current + 1) % S.players.length].name)}`}</button>`;
+}
+
+function renderGame() {
+  const p = S.players[S.current];
+  const board = $app.querySelector('.board');
+  const scroll = board && !ui.top ? board.scrollTop : 0;
+  ui.top = false;
+  $app.innerHTML = `
+  <header class="top wrap">
+    <div class="turn">
+      <div><div class="eyebrow">Am Zug · ${esc(genreName(S.genres || []))} · noch ${S.deck.length}</div><h2 style="color:${PCOL[S.current % PCOL.length]}">${esc(p.name)}</h2></div>
+      <button class="btn small" data-act="menu" aria-label="Menü">Menü</button>
+    </div>
+    <div class="scores">${chips()}</div>
+  </header>
+  <main class="board wrap">
+    ${mysteryHTML()}
+    ${bannerHTML()}
+    ${S.phase === 'place' && p.tokens > 0 ? `<div class="actions-row"><button class="btn small" data-act="skip">Song überspringen · 1 Token</button></div>` : ''}
+    <div>
+      <div class="tl-head"><h3>Zeitstrahl von ${esc(p.name)}</h3><span class="eyebrow">${p.cards.length} ${p.cards.length === 1 ? 'Karte' : 'Karten'}</span></div>
+      <div class="timeline">${timelineHTML()}</div>
+    </div>
+  </main>
+  <footer class="bar wrap">${barHTML()}</footer>
+  ${ui.pickChallenger ? `
+  <div class="overlay" data-act="closeOverlay">
+    <div class="sheet" role="dialog" aria-label="Einspruch erheben">
+      <h3>Wer erhebt Einspruch?</h3>
+      <p>Kostet einen Token. Liegt ${esc(p.name)} falsch und du richtig, bekommst du die Karte.</p>
+      ${S.players.map((q, i) => i === S.current ? '' : `<button class="btn" data-act="pickChallenger" data-i="${i}" ${q.tokens > 0 ? '' : 'disabled'}>${esc(q.name)} · ● ${q.tokens}</button>`).join('')}
+      <button class="btn ghost" data-act="closeOverlay">Abbrechen</button>
+    </div>
+  </div>` : ''}
+  ${ui.menu ? `
+  <div class="overlay" data-act="closeOverlay">
+    <div class="sheet" role="dialog" aria-label="Menü">
+      <h3>Menü</h3>
+      <p>Das Spiel wird automatisch auf diesem Gerät gespeichert.</p>
+      <button class="btn" data-act="closeOverlay">Weiterspielen</button>
+      <button class="btn" data-act="end">Spiel beenden und auswerten</button>
+      <button class="btn ghost" data-act="toSetup">Neues Spiel einrichten</button>
+    </div>
+  </div>` : ''}`;
+  const nb = $app.querySelector('.board');
+  if (nb) nb.scrollTop = scroll;
+}
+
+function renderWin() {
+  const ranked = S.players.map((p, i) => ({ ...p, i })).sort((a, b) => b.cards.length - a.cards.length || b.tokens - a.tokens);
+  const w = ranked[0];
+  $app.innerHTML = `
+  <div class="win wrap">
+    <div class="vinyl" style="width:96px;height:96px"></div>
+    <div><div class="eyebrow">Sieg</div><h1 style="color:${PCOL[w.i % PCOL.length]}">${esc(w.name)}</h1></div>
+    <div class="rank">${ranked.map((p, k) => `<div><span>${k + 1}. ${esc(p.name)}</span><span>${p.cards.length} Karten · ● ${p.tokens}</span></div>`).join('')}</div>
+    <div><div class="eyebrow" style="margin-bottom:8px">Zeitstrahl von ${esc(w.name)}</div>
+      <div class="timeline" style="gap:6px">${sorted(w.cards).map(c => cardHTML(c)).join('')}</div></div>
+    <button class="btn primary" data-act="again">Revanche</button>
+    <button class="btn ghost" data-act="toSetup">Neue Runde einrichten</button>
+  </div>`;
+  confetti();
+}
+
+/* ---------------- events ---------------- */
+
+$app.addEventListener('input', e => {
+  const i = e.target.dataset.name;
+  if (i != null) { S.names[+i] = e.target.value; save(); }
+});
+
+$app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.classList.contains('overlay') && e.target !== el) return; // clicks inside the sheet
+  const act = el.dataset.act, i = el.dataset.i != null ? +el.dataset.i : null, v = el.dataset.v;
+  switch (act) {
+    case 'add': S.names.push(`Spieler ${S.names.length + 1}`); break;
+    case 'del': S.names.splice(i, 1); break;
+    case 'mode': S.blind = v === '1'; break;
+    case 'target': S.target = +v; break;
+    case 'genre':
+      if (!v) S.genres = [];
+      else S.genres = S.genres.includes(v) ? S.genres.filter(g => g !== v) : [...S.genres, v];
+      break;
+    case 'start': startGame(); break;
+    case 'resume': S = load(); break;
+    case 'slot':
+      if (S.phase === 'place') S.slot = i; else S.cslot = i;
+      break;
+    case 'unslot': S.slot = null; break;
+    case 'uncslot': S.cslot = null; break;
+    case 'lock': S.phase = 'locked'; break;
+    case 'challenge': ui.pickChallenger = true; break;
+    case 'pickChallenger': S.challenger = i; S.phase = 'challenge'; ui.pickChallenger = false; break;
+    case 'cancelChallenge': S.challenger = null; S.cslot = null; S.phase = 'locked'; break;
+    case 'reveal': reveal(); break;
+    case 'skip': S.players[S.current].tokens--; S.card = S.deck.length ? S.deck.pop() : S.card; S.slot = null; ui.peek = false; break;
+    case 'bonus': S.players[S.current].tokens = Math.min(MAX_TOKENS, S.players[S.current].tokens + 1); S.bonus = true; break;
+    case 'next':
+      if (leader() >= 0) finish(); else newTurn();
+      ui.top = true;
+      break;
+    case 'menu': ui.menu = true; break;
+    case 'closeOverlay': ui.menu = false; ui.pickChallenger = false; break;
+    case 'end': ui.menu = false; finish(); break;
+    case 'toSetup': ui.menu = false; S = freshSetup(S); break;
+    case 'again': S = { ...freshSetup(S), names: S.players.map(p => p.name) }; startGame(); break;
+  }
+  render();
+});
+
+// press-and-hold peek for the DJ in blind mode
+function setPeek(on) {
+  ui.peek = on;
+  const box = document.getElementById('peekbox');
+  if (box) box.hidden = !on;
+}
+$app.addEventListener('pointerdown', e => { if (e.target.closest('[data-peek]')) { e.preventDefault(); setPeek(true); } });
+['pointerup', 'pointercancel', 'pointerout'].forEach(t => $app.addEventListener(t, e => { if (ui.peek && e.target.closest('[data-peek]')) setPeek(false); }));
+$app.addEventListener('contextmenu', e => { if (e.target.closest('[data-peek]')) e.preventDefault(); });
+$app.addEventListener('keydown', e => { if (e.target.closest('[data-peek]') && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); setPeek(!ui.peek); } });
+
+/* ---------------- confetti ---------------- */
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = document.getElementById('confetti');
+  const x = c.getContext('2d');
+  c.hidden = false;
+  c.width = innerWidth; c.height = innerHeight;
+  const bits = Array.from({ length: 140 }, () => ({
+    x: Math.random() * c.width, y: -20 - Math.random() * c.height * .6,
+    r: 4 + Math.random() * 6, vy: 2 + Math.random() * 3, vx: -1 + Math.random() * 2,
+    h: Math.floor(Math.random() * 360), a: Math.random() * 6,
+  }));
+  let t = 0;
+  (function tick() {
+    x.clearRect(0, 0, c.width, c.height);
+    bits.forEach(b => {
+      b.y += b.vy; b.x += b.vx; b.a += .1;
+      x.fillStyle = `hsl(${b.h} 90% 65%)`;
+      x.save(); x.translate(b.x, b.y); x.rotate(b.a); x.fillRect(-b.r / 2, -b.r / 4, b.r, b.r / 2); x.restore();
+    });
+    if (++t < 240) requestAnimationFrame(tick); else { c.hidden = true; }
+  })();
+}
+
+/* ---------------- boot ---------------- */
+function boot(data) {
+  const g = load();
+  S = (data && data.S) || (g && g.screen === 'game' ? g : freshSetup(load(KEY + '-setup')));
+  render();
+}
+window.claude?.hot?.snapshot?.(() => ({ S }));
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+<script>
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

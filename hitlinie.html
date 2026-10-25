@@ -213,14 +213,21 @@ details.help b { color: var(--fg); }
 // Jahr | Interpret | Titel | Genres  (Jahr der Single-Veröffentlichung)
 // R Rock · P Pop · D Dance & Elektro · H Hip-Hop & R&B · S Soul, Funk & Disco · K Schlager · G deutschsprachig
 const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
+1956|Freddy Quinn|Heimweh (Dort wo die Blumen blüh'n)|KG
 1957|Elvis Presley|Jailhouse Rock|R
 1958|Chuck Berry|Johnny B. Goode|R
 1958|Ritchie Valens|La Bamba|R
+1959|Freddy Quinn|Die Gitarre und das Meer|KG
 1960|Elvis Presley|It's Now or Never|P
 1960|Lale Andersen|Ein Schiff wird kommen|KG
+1960|Gus Backus|Da sprach der alte Häuptling der Indianer|KG
 1961|Ben E. King|Stand by Me|S
+1961|Ralf Bendix|Babysitter-Boogie|KG
+1961|Nana Mouskouri|Weiße Rosen aus Athen|KG
 1962|Ray Charles|I Can't Stop Loving You|S
+1962|Conny Froboess|Zwei kleine Italiener|KG
 1963|The Beatles|She Loves You|PR
+1963|Manuela|Schuld war nur der Bossa Nova|KG
 1964|The Beatles|A Hard Day's Night|PR
 1964|The Animals|The House of the Rising Sun|R
 1964|Roy Orbison|Oh, Pretty Woman|R
@@ -228,6 +235,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1965|The Rolling Stones|(I Can't Get No) Satisfaction|R
 1965|Bob Dylan|Like a Rolling Stone|R
 1965|Drafi Deutscher|Marmor, Stein und Eisen bricht|KG
+1965|Udo Jürgens|Siebzehn Jahr, blondes Haar|KG
 1966|The Beach Boys|Good Vibrations|P
 1966|Nancy Sinatra|These Boots Are Made for Walkin'|P
 1966|Roy Black|Ganz in Weiß|KG
@@ -236,6 +244,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1967|Aretha Franklin|Respect|S
 1967|The Doors|Light My Fire|R
 1967|Marvin Gaye & Tammi Terrell|Ain't No Mountain High Enough|S
+1967|Heintje|Mama|KG
 1968|The Beatles|Hey Jude|PR
 1968|Simon & Garfunkel|Mrs. Robinson|P
 1968|Steppenwolf|Born to Be Wild|R
@@ -243,35 +252,50 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1969|The Beatles|Come Together|R
 1969|Elvis Presley|In the Ghetto|P
 1969|Creedence Clearwater Revival|Proud Mary|R
+1969|Michael Holm|Mendocino|KG
 1970|Simon & Garfunkel|Bridge over Troubled Water|P
 1970|The Jackson 5|ABC|S
 1970|Black Sabbath|Paranoid|R
 1970|James Brown|Get Up (I Feel Like Being a) Sex Machine|S
 1970|Wencke Myhre|Er hat ein knallrotes Gummiboot|KG
+1970|Daliah Lavi|Oh, wann kommst du?|KG
 1971|John Lennon|Imagine|P
 1971|Marvin Gaye|What's Going On|S
 1971|Don McLean|American Pie|P
 1972|Bill Withers|Lean on Me|S
 1972|Alice Cooper|School's Out|R
 1972|Stevie Wonder|Superstition|S
+1972|Rex Gildo|Fiesta Mexicana|KG
+1972|Bata Illic|Michaela|KG
+1972|Christian Anders|Es fährt ein Zug nach Nirgendwo|KG
+1972|Jürgen Marcus|Eine neue Liebe ist wie ein neues Leben|KG
+1972|Heino|Blau blüht der Enzian|KG
+1972|Juliane Werding|Am Tag, als Conny Kramer starb|KG
 1973|Pink Floyd|Money|R
 1973|Deep Purple|Smoke on the Water|R
+1973|Bernd Clüver|Der Junge mit der Mundharmonika|KG
+1973|Cindy & Bert|Immer wieder sonntags|KG
 1974|ABBA|Waterloo|P
 1974|Carl Douglas|Kung Fu Fighting|S
 1974|Kraftwerk|Autobahn|DG
 1974|Udo Jürgens|Griechischer Wein|KG
 1974|Lynyrd Skynyrd|Sweet Home Alabama|R
 1974|Vicky Leandros|Theo, wir fahr'n nach Lodz|KG
+1974|Chris Roberts|Du kannst nicht immer 17 sein|KG
 1975|Queen|Bohemian Rhapsody|R
 1975|ABBA|Mamma Mia|P
 1975|Bruce Springsteen|Born to Run|R
 1975|10cc|I'm Not in Love|P
 1975|Aerosmith|Walk This Way|R
+1975|Marianne Rosenberg|Er gehört zu mir|KG
 1976|ABBA|Dancing Queen|PS
 1976|Elton John & Kiki Dee|Don't Go Breaking My Heart|P
 1976|Boston|More Than a Feeling|R
 1976|Wild Cherry|Play That Funky Music|S
 1976|Udo Jürgens|Aber bitte mit Sahne|KG
+1976|Jürgen Drews|Ein Bett im Kornfeld|KG
+1976|Peter Alexander|Die kleine Kneipe|KG
+1976|Costa Cordalis|Anita|KG
 1977|Bee Gees|Stayin' Alive|S
 1977|Fleetwood Mac|Go Your Own Way|R
 1977|Donna Summer|I Feel Love|SD
@@ -300,6 +324,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1980|Joy Division|Love Will Tear Us Apart|R
 1980|Diana Ross|Upside Down|S
 1980|Roland Kaiser|Santa Maria|KG
+1980|Peter Maffay|Über sieben Brücken musst du gehn|KG
 1981|Kim Wilde|Kids in America|P
 1981|Depeche Mode|Just Can't Get Enough|PD
 1981|Spider Murphy Gang|Skandal im Sperrbezirk|RG
@@ -311,6 +336,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1982|Markus|Ich will Spaß|PG
 1982|Nicole|Ein bißchen Frieden|KG
 1982|The Clash|Should I Stay or Should I Go|R
+1982|Udo Jürgens|Ich war noch niemals in New York|KG
 1983|Michael Jackson|Billie Jean|P
 1983|Nena|99 Luftballons|PG
 1983|Eurythmics|Sweet Dreams (Are Made of This)|PD
@@ -329,6 +355,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1984|Tina Turner|What's Love Got to Do with It|P
 1984|Modern Talking|You're My Heart, You're My Soul|PD
 1984|Van Halen|Jump|R
+1984|Howard Carpendale|Hello Again|KG
 1985|a-ha|Take On Me|P
 1985|Dire Straits|Money for Nothing|R
 1985|Falco|Rock Me Amadeus|PG
@@ -401,16 +428,19 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 1998|The Offspring|Pretty Fly (for a White Guy)|R
 1998|Lauryn Hill|Doo Wop (That Thing)|H
 1998|ATB|9 PM (Till I Come)|D
+1998|Guildo Horn|Guildo hat euch lieb!|KG
 1999|Lou Bega|Mambo No. 5 (A Little Bit of...)|P
 1999|Ricky Martin|Livin' la Vida Loca|P
 1999|Christina Aguilera|Genie in a Bottle|P
 1999|TLC|No Scrubs|H
 1999|Red Hot Chili Peppers|Scar Tissue|R
 1999|Alice Deejay|Better Off Alone|D
+1999|DJ Ötzi|Anton aus Tirol|KG
 2000|Eminem|The Real Slim Shady|H
 2000|Modjo|Lady (Hear Me Tonight)|D
 2000|Daft Punk|One More Time|D
 2000|Britney Spears|Oops!... I Did It Again|P
+2000|DJ Ötzi|Hey Baby (Uhh, Ahh)|K
 2001|Shakira|Whenever, Wherever|P
 2001|Kylie Minogue|Can't Get You Out of My Head|PD
 2001|Linkin Park|In the End|R
@@ -467,6 +497,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 2011|LMFAO|Party Rock Anthem|D
 2011|Gotye|Somebody That I Used to Know|P
 2011|David Guetta feat. Sia|Titanium|D
+2011|Andreas Gabalier|I sing a Liad für di|KG
 2012|PSY|Gangnam Style|P
 2012|Cro|Easy|HG
 2012|Macklemore & Ryan Lewis|Thrift Shop|H
@@ -478,6 +509,7 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 2013|Pharrell Williams|Happy|PS
 2013|Helene Fischer|Atemlos durch die Nacht|KG
 2013|Arctic Monkeys|Do I Wanna Know?|R
+2013|Beatrice Egli|Mein Herz|KG
 2014|Taylor Swift|Shake It Off|P
 2014|Mark Ronson feat. Bruno Mars|Uptown Funk|PS
 2014|Andreas Bourani|Auf uns|PG
@@ -487,8 +519,10 @@ const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
 2015|Major Lazer & DJ Snake|Lean On|D
 2015|Twenty One Pilots|Stressed Out|P
 2015|Alan Walker|Faded|D
+2015|Andreas Gabalier|Hulapalu|KG
 2016|The Chainsmokers feat. Halsey|Closer|D
 2016|Drake|One Dance|H
+2016|Kerstin Ott|Die immer lacht|KG
 2017|Ed Sheeran|Shape of You|P
 2017|Luis Fonsi feat. Daddy Yankee|Despacito|P
 2017|Imagine Dragons|Believer|R

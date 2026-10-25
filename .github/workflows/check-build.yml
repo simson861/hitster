@@ -1,0 +1,12 @@
+name: Check Pages build
+
+# GitHub Pages serves the committed index.html; fail if it was not rebuilt after editing hitlinie.html.
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 build.py
+      - run: git diff --exit-code -- index.html sw.js || { echo "::error::index.html is out of date. Run python3 build.py and commit the result."; exit 1; }

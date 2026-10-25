@@ -1,9 +1,11 @@
-"""Builds the GitHub Pages site in _site/ from the artifact page hitlinie.html.
+"""Builds index.html and sw.js for GitHub Pages from the artifact page hitlinie.html.
 
+Pages serves the repository root of master, so the generated files are committed:
+run `python3 build.py` after every change to hitlinie.html.
 The artifact is written without <html>/<head>/<body> (the artifact host adds them),
-so this wraps it in a full document and adds the web-app manifest, icons and service worker.
+so this wraps it in a full document and links the web-app manifest, icons and service worker.
 """
-import hashlib, pathlib, shutil
+import hashlib, pathlib
 
 root = pathlib.Path(__file__).parent
 src = (root / 'hitlinie.html').read_text(encoding='utf-8')
@@ -35,10 +37,7 @@ if ('serviceWorker' in navigator) addEventListener('load', () => navigator.servi
 </html>
 """
 
-out = root / '_site'
-shutil.rmtree(out, ignore_errors=True)
-shutil.copytree(root / 'web', out)
-(out / 'index.html').write_text(page, encoding='utf-8')
-sw = out / 'sw.js'
-sw.write_text(sw.read_text(encoding='utf-8').replace('__BUILD__', build), encoding='utf-8')
-print(f'built _site/ ({build})')
+(root / 'index.html').write_text(page, encoding='utf-8')
+sw = (root / 'sw.template.js').read_text(encoding='utf-8')
+(root / 'sw.js').write_text(sw.replace('__BUILD__', build), encoding='utf-8')
+print(f'built index.html and sw.js ({build})')
