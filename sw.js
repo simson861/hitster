@@ -1,6 +1,6 @@
 // Offline support: the app's own files come from the network first so updates show up at once,
 // the cached copy is only used offline; Google Fonts are cache-first since they never change.
-const CACHE = 'hitlinie-73b169fa00';
+const CACHE = 'hitlinie-45cecfe579';
 const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

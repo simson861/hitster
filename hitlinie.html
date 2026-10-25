@@ -171,6 +171,8 @@ details.help b { color: var(--fg); }
 .banner { border-radius: 16px; padding: 14px 16px; font-weight: 700; display: flex; flex-direction: column; gap: 2px; }
 .banner.ok { background: color-mix(in oklab, var(--good) 22%, var(--ink)); }
 .banner.no { background: color-mix(in oklab, var(--bad) 22%, var(--ink)); }
+.banner.info { background: color-mix(in oklab, var(--spot) 16%, var(--ink)); }
+.chip.out { opacity: .45; }
 .banner span { font-weight: 500; color: var(--muted); }
 
 .bar {
@@ -588,19 +590,54 @@ function freshSetup(prev) {
   };
 }
 
-function startGame() {
+// Fairness: the starting player is drawn by lot, a round is always played to the end once someone
+// reaches the target, and a tie for the lead goes into a tiebreak of further full rounds.
+function startGame(starter) {
   const names = S.names.map((n, i) => n.trim() || `Spieler ${i + 1}`);
   const deck = shuffle(pool(S.genres));
   const players = names.map(name => ({ name, cards: [deck.pop()], tokens: START_TOKENS }));
-  S = { screen: 'game', names, target: S.target, blind: S.blind, genres: S.genres, players, deck, current: 0, round: 1 };
-  newTurn(true);
+  S = {
+    screen: 'game', names, target: S.target, blind: S.blind, genres: S.genres, players, deck,
+    starter: starter ?? Math.floor(Math.random() * players.length),
+    active: players.map((_, i) => i), tiebreak: false, round: 1, pos: 0,
+  };
+  S.order = roundOrder();
+  newTurn();
 }
 
-function newTurn(first) {
-  if (!first) S.current = (S.current + 1) % S.players.length;
+// players of the current round in turn order, beginning with the starting player
+function roundOrder() {
+  const n = S.players.length;
+  return Array.from({ length: n }, (_, k) => (S.starter + k) % n).filter(i => S.active.includes(i));
+}
+
+function newTurn() {
   if (!S.deck.length) { finish(); return; }
+  S.current = S.order[S.pos];
   Object.assign(S, { card: S.deck.pop(), phase: 'place', slot: null, challenger: null, cslot: null, result: null, bonus: false });
   ui.peek = false;
+}
+
+const cardsOf = i => S.players[i].cards.length;
+const lastInRound = () => S.pos >= S.order.length - 1;
+
+// outcome once the current round is over: null = play on, otherwise the players still level at the top
+function roundOutcome() {
+  const reached = S.active.some(i => cardsOf(i) >= S.target);
+  if (!reached && !S.tiebreak) return null;
+  const max = Math.max(...S.active.map(cardsOf));
+  return S.active.filter(i => cardsOf(i) === max);
+}
+
+function advance() {
+  if (!lastInRound()) { S.pos++; newTurn(); return; }
+  const top = roundOutcome();
+  if (top && top.length === 1) { finish(); return; }
+  if (top) { S.active = top; S.tiebreak = true; }
+  S.round++;
+  S.order = roundOrder();
+  S.pos = 0;
+  newTurn();
 }
 
 function fits(cards, slot, y) {
@@ -625,12 +662,29 @@ function reveal() {
   S.phase = 'reveal';
 }
 
+// most cards among the players still in the race wins; if that is level, the tokens decide; otherwise a shared win
 function finish() {
+  const maxC = Math.max(...S.active.map(cardsOf));
+  const byCards = S.active.filter(i => cardsOf(i) === maxC);
+  const maxT = Math.max(...byCards.map(i => S.players[i].tokens));
+  S.winners = byCards.filter(i => S.players[i].tokens === maxT);
+  S.winBy = byCards.length > 1 ? (S.winners.length > 1 ? 'shared' : 'tokens') : S.tiebreak ? 'tiebreak' : 'cards';
   S.screen = 'win';
 }
 
-function leader() {
-  return S.players.findIndex(p => p.cards.length >= S.target);
+const nameList = ids => {
+  const n = ids.map(i => esc(S.players[i].name));
+  return n.length > 1 ? n.slice(0, -1).join(', ') + ' und ' + n[n.length - 1] : n[0];
+};
+
+// games saved before the fairness rules have no turn order yet
+function migrate(st) {
+  if (st && st.screen === 'game' && !st.order) {
+    const n = st.players.length;
+    Object.assign(st, { starter: 0, active: st.players.map((_, i) => i), tiebreak: false, round: st.round || 1, pos: st.current });
+    st.order = Array.from({ length: n }, (_, k) => k);
+  }
+  return st;
 }
 
 /* ---------------- render ---------------- */
@@ -703,7 +757,8 @@ function renderSetup() {
         <li>Richtig? Die Karte bleibt liegen. Falsch? Sie fliegt raus.</li>
         <li><b>Token</b>: Im Blind-Modus gibt es einen für Titel + Interpret, im Quiz-Modus für das exakte Jahr. Ein Token überspringt einen Song.</li>
         <li><b>Einspruch!</b> Glaubt ein Mitspieler, dass du falsch liegst, setzt er einen Token und wählt eine andere Lücke. Liegt er richtig und du falsch, bekommt er die Karte.</li>
-        <li>Wer zuerst ${S.target} Karten hat, gewinnt.</li>
+        <li>Wer anfängt, wird ausgelost. Hat jemand ${S.target} Karten, wird die Runde zu Ende gespielt, damit alle gleich oft dran waren. Dann gewinnt, wer die meisten Karten hat.</li>
+        <li>Gleichstand? Die Gleichplatzierten spielen ein Stechen über weitere ganze Runden. Gehen die Songs aus, entscheiden die Token.</li>
       </ol>
     </details>
     <details class="help">
@@ -720,7 +775,7 @@ function renderSetup() {
 
 function chips() {
   return S.players.map((p, i) => `
-    <div class="chip ${i === S.current ? 'on' : ''}">
+    <div class="chip ${i === S.current ? 'on' : ''} ${S.active && !S.active.includes(i) ? 'out' : ''}">
       <span class="dot" style="background:${PCOL[i % PCOL.length]}"></span>
       <span>${esc(p.name)}</span>
       <span class="n">${p.cards.length}/${S.target}</span>
@@ -837,6 +892,26 @@ function timelineHTML() {
   return html;
 }
 
+// round status: who starts, last round, tiebreak
+function statusHTML() {
+  if (S.tiebreak) {
+    return `<div class="banner info">Stechen um den Sieg: ${nameList(S.active)}
+      <span>Gleich viele Karten. Ihr spielt weitere ganze Runden, bis nach einer Runde einer vorne liegt.</span></div>`;
+  }
+  const reached = S.active.filter(i => cardsOf(i) >= S.target);
+  if (reached.length) {
+    const rest = S.order.slice(S.phase === 'reveal' ? S.pos + 1 : S.pos);
+    const who = reached.length === 1 ? `${nameList(reached)} hat ${S.target} Karten` : `${nameList(reached)} haben ${S.target} Karten`;
+    return `<div class="banner info">Letzte Runde! ${who}.
+      <span>${rest.length ? `Noch dran: ${nameList(rest)}. Danach wird gewertet.` : 'Die Runde ist vorbei, jetzt wird gewertet.'}</span></div>`;
+  }
+  if (S.round === 1 && S.pos === 0 && S.phase === 'place') {
+    return `<div class="banner info">Ausgelost: ${esc(S.players[S.current].name)} beginnt.
+      <span>Jeder ist pro Runde einmal dran. Erreicht jemand ${S.target} Karten, wird die Runde zu Ende gespielt.</span></div>`;
+  }
+  return '';
+}
+
 function bannerHTML() {
   if (S.phase !== 'reveal') return '';
   const s = SONGS[S.card];
@@ -854,7 +929,7 @@ function barHTML() {
     return `<div class="row"><button class="btn ghost" data-act="unslot">Ändern</button><button class="btn primary" data-act="lock">Einloggen</button></div>`;
   }
   if (S.phase === 'locked') {
-    const canChallenge = S.players.some((q, i) => i !== S.current && q.tokens > 0);
+    const canChallenge = S.players.some((q, i) => i !== S.current && S.active.includes(i) && q.tokens > 0);
     return `<div class="row">
       ${canChallenge ? `<button class="btn ghost" data-act="challenge">Einspruch!</button>` : ''}
       <button class="btn primary" data-act="reveal">Aufdecken</button>
@@ -866,12 +941,17 @@ function barHTML() {
     return `<div class="row"><button class="btn ghost" data-act="uncslot">Ändern</button><button class="btn primary" data-act="reveal">Aufdecken</button></div>`;
   }
   // reveal
-  const won = leader();
+  let nextLabel;
+  if (!lastInRound()) nextLabel = `Weiter: ${esc(S.players[S.order[S.pos + 1]].name)}`;
+  else {
+    const top = roundOutcome();
+    nextLabel = !top ? 'Nächste Runde' : top.length === 1 ? 'Zur Siegerehrung' : 'Weiter zum Stechen';
+  }
   const bonusLabel = S.blind ? 'Titel + Interpret erraten' : 'Exaktes Jahr genannt';
   return `
     ${!S.bonus && p.tokens < MAX_TOKENS ? `<button class="btn ghost" data-act="bonus">${bonusLabel}: +1 Token für ${esc(p.name)}</button>` : ''}
     ${S.bonus ? `<div class="hint" style="padding:4px 0">+1 Token für ${esc(p.name)}</div>` : ''}
-    <button class="btn primary" data-act="next">${won >= 0 ? 'Zur Siegerehrung' : `Weiter: ${esc(S.players[(S.current + 1) % S.players.length].name)}`}</button>`;
+    <button class="btn primary" data-act="next">${nextLabel}</button>`;
 }
 
 function renderGame() {
@@ -882,12 +962,13 @@ function renderGame() {
   $app.innerHTML = `
   <header class="top wrap">
     <div class="turn">
-      <div><div class="eyebrow">Am Zug · ${esc(genreName(S.genres || []))} · noch ${S.deck.length}</div><h2 style="color:${PCOL[S.current % PCOL.length]}">${esc(p.name)}</h2></div>
+      <div><div class="eyebrow">${S.tiebreak ? 'Stechen' : `Runde ${S.round}`} · ${esc(genreName(S.genres || []))} · noch ${S.deck.length}</div><h2 style="color:${PCOL[S.current % PCOL.length]}">${esc(p.name)}</h2></div>
       <button class="btn small" data-act="menu" aria-label="Menü">Menü</button>
     </div>
     <div class="scores">${chips()}</div>
   </header>
   <main class="board wrap">
+    ${statusHTML()}
     ${mysteryHTML()}
     ${bannerHTML()}
     ${S.phase === 'place' && p.tokens > 0 ? `<div class="actions-row"><button class="btn small" data-act="skip">Song überspringen · 1 Token</button></div>` : ''}
@@ -902,7 +983,7 @@ function renderGame() {
     <div class="sheet" role="dialog" aria-label="Einspruch erheben">
       <h3>Wer erhebt Einspruch?</h3>
       <p>Kostet einen Token. Liegt ${esc(p.name)} falsch und du richtig, bekommst du die Karte.</p>
-      ${S.players.map((q, i) => i === S.current ? '' : `<button class="btn" data-act="pickChallenger" data-i="${i}" ${q.tokens > 0 ? '' : 'disabled'}>${esc(q.name)} · ● ${q.tokens}</button>`).join('')}
+      ${S.players.map((q, i) => i === S.current || !S.active.includes(i) ? '' : `<button class="btn" data-act="pickChallenger" data-i="${i}" ${q.tokens > 0 ? '' : 'disabled'}>${esc(q.name)} · ● ${q.tokens}</button>`).join('')}
       <button class="btn ghost" data-act="closeOverlay">Abbrechen</button>
     </div>
   </div>` : ''}
@@ -922,11 +1003,17 @@ function renderGame() {
 
 function renderWin() {
   const ranked = S.players.map((p, i) => ({ ...p, i })).sort((a, b) => b.cards.length - a.cards.length || b.tokens - a.tokens);
-  const w = ranked[0];
+  const wins = S.winners || [ranked[0].i];
+  const w = { ...S.players[wins[0]], i: wins[0] };
+  const why = {
+    tiebreak: 'Nach einem Stechen.',
+    tokens: 'Gleich viele Karten, die Token haben entschieden.',
+    shared: 'Gleich viele Karten und Token: ein gemeinsamer Sieg.',
+  }[S.winBy] || '';
   $app.innerHTML = `
   <div class="win wrap">
     <div class="vinyl" style="width:96px;height:96px"></div>
-    <div><div class="eyebrow">Sieg</div><h1 style="color:${PCOL[w.i % PCOL.length]}">${esc(w.name)}</h1></div>
+    <div><div class="eyebrow">${wins.length > 1 ? 'Gemeinsamer Sieg' : 'Sieg'}</div><h1 style="color:${PCOL[w.i % PCOL.length]}">${nameList(wins)}</h1>${why ? `<p style="margin:10px 0 0;color:var(--muted)">${why}</p>` : ''}</div>
     <div class="rank">${ranked.map((p, k) => `<div><span>${k + 1}. ${esc(p.name)}</span><span>${p.cards.length} Karten · ● ${p.tokens}</span></div>`).join('')}</div>
     <div><div class="eyebrow" style="margin-bottom:8px">Zeitstrahl von ${esc(w.name)}</div>
       <div class="timeline" style="gap:6px">${sorted(w.cards).map(c => cardHTML(c)).join('')}</div></div>
@@ -958,7 +1045,7 @@ $app.addEventListener('click', e => {
       else S.genres = S.genres.includes(v) ? S.genres.filter(g => g !== v) : [...S.genres, v];
       break;
     case 'start': startGame(); break;
-    case 'resume': S = load(); break;
+    case 'resume': S = migrate(load()); break;
     case 'slot':
       if (S.phase === 'place') S.slot = i; else S.cslot = i;
       break;
@@ -972,14 +1059,19 @@ $app.addEventListener('click', e => {
     case 'skip': S.players[S.current].tokens--; S.card = S.deck.length ? S.deck.pop() : S.card; S.slot = null; ui.peek = false; break;
     case 'bonus': S.players[S.current].tokens = Math.min(MAX_TOKENS, S.players[S.current].tokens + 1); S.bonus = true; break;
     case 'next':
-      if (leader() >= 0) finish(); else newTurn();
+      advance();
       ui.top = true;
       break;
     case 'menu': ui.menu = true; break;
     case 'closeOverlay': ui.menu = false; ui.pickChallenger = false; break;
     case 'end': ui.menu = false; finish(); break;
     case 'toSetup': ui.menu = false; S = freshSetup(S); break;
-    case 'again': S = { ...freshSetup(S), names: S.players.map(p => p.name) }; startGame(); break;
+    case 'again': {
+      const next = ((S.starter ?? -1) + 1) % S.players.length; // in a rematch the next player starts
+      S = { ...freshSetup(S), names: S.players.map(p => p.name) };
+      startGame(next);
+      break;
+    }
   }
   render();
 });
@@ -1022,7 +1114,7 @@ function confetti() {
 /* ---------------- boot ---------------- */
 function boot(data) {
   const g = load();
-  S = (data && data.S) || (g && g.screen === 'game' ? g : freshSetup(load(KEY + '-setup')));
+  S = migrate((data && data.S) || (g && g.screen === 'game' ? g : freshSetup(load(KEY + '-setup'))));
   render();
 }
 window.claude?.hot?.snapshot?.(() => ({ S }));
