@@ -1014,7 +1014,7 @@ function renderWin() {
   <div class="win wrap">
     <div class="vinyl" style="width:96px;height:96px"></div>
     <div><div class="eyebrow">${wins.length > 1 ? 'Gemeinsamer Sieg' : 'Sieg'}</div><h1 style="color:${PCOL[w.i % PCOL.length]}">${nameList(wins)}</h1>${why ? `<p style="margin:10px 0 0;color:var(--muted)">${why}</p>` : ''}</div>
-    <div class="rank">${ranked.map((p, k) => `<div><span>${k + 1}. ${esc(p.name)}</span><span>${p.cards.length} Karten · ● ${p.tokens}</span></div>`).join('')}</div>
+    <div class="rank">${ranked.map((p, k) => `<div><span>${k + 1}. ${esc(p.name)}</span><span>${p.cards.length} ${p.cards.length === 1 ? 'Karte' : 'Karten'} · ● ${p.tokens}</span></div>`).join('')}</div>
     <div><div class="eyebrow" style="margin-bottom:8px">Zeitstrahl von ${esc(w.name)}</div>
       <div class="timeline" style="gap:6px">${sorted(w.cards).map(c => cardHTML(c)).join('')}</div></div>
     <button class="btn primary" data-act="again">Revanche</button>
