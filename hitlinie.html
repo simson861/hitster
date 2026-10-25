@@ -85,6 +85,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .seg button span { font-size: 13px; color: var(--muted); line-height: 1.35; }
 .seg button[aria-pressed="true"] { border-color: var(--spot); background: color-mix(in oklab, var(--spot) 12%, var(--ink)); }
 .seg.three { grid-template-columns: repeat(3, 1fr); }
+.genres { display: flex; flex-wrap: wrap; gap: 8px; }
+.genres button { border: 2px solid var(--line); background: var(--ink); border-radius: 999px; padding: 9px 14px; font-weight: 600; font-size: 15px; }
+.genres button[aria-pressed="true"] { border-color: var(--spot); background: color-mix(in oklab, var(--spot) 14%, var(--ink)); }
+.pool-info { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.pool-info.warn { color: var(--bad); }
 .seg.three button { text-align: center; align-items: center; }
 .seg.three strong { font-family: var(--display); font-size: 22px; }
 .resume { border: 2px solid var(--spot); }
@@ -205,230 +210,323 @@ details.help b { color: var(--fg); }
 <canvas class="confetti" id="confetti" hidden></canvas>
 
 <script>
-// Jahr | Interpret | Titel  (Jahr der Single-Veröffentlichung)
-const RAW = `1956|Elvis Presley|Heartbreak Hotel
-1957|Elvis Presley|Jailhouse Rock
-1958|Chuck Berry|Johnny B. Goode
-1958|Ritchie Valens|La Bamba
-1960|Elvis Presley|It's Now or Never
-1960|Lale Andersen|Ein Schiff wird kommen
-1961|Ben E. King|Stand by Me
-1962|Ray Charles|I Can't Stop Loving You
-1963|The Beatles|She Loves You
-1964|The Beatles|A Hard Day's Night
-1964|The Animals|The House of the Rising Sun
-1964|Roy Orbison|Oh, Pretty Woman
-1965|The Rolling Stones|(I Can't Get No) Satisfaction
-1965|Bob Dylan|Like a Rolling Stone
-1965|Drafi Deutscher|Marmor, Stein und Eisen bricht
-1966|The Beach Boys|Good Vibrations
-1966|Nancy Sinatra|These Boots Are Made for Walkin'
-1966|Roy Black|Ganz in Weiß
-1966|Udo Jürgens|Merci, Chérie
-1967|Procol Harum|A Whiter Shade of Pale
-1967|Aretha Franklin|Respect
-1967|The Doors|Light My Fire
-1968|The Beatles|Hey Jude
-1968|Simon & Garfunkel|Mrs. Robinson
-1969|The Beatles|Come Together
-1969|Elvis Presley|In the Ghetto
-1970|Simon & Garfunkel|Bridge over Troubled Water
-1970|The Jackson 5|ABC
-1971|John Lennon|Imagine
-1971|Marvin Gaye|What's Going On
-1971|Don McLean|American Pie
-1972|Bill Withers|Lean on Me
-1973|Pink Floyd|Money
-1974|ABBA|Waterloo
-1974|Carl Douglas|Kung Fu Fighting
-1974|Kraftwerk|Autobahn
-1974|Udo Jürgens|Griechischer Wein
-1975|Queen|Bohemian Rhapsody
-1975|ABBA|Mamma Mia
-1975|Bruce Springsteen|Born to Run
-1975|10cc|I'm Not in Love
-1976|ABBA|Dancing Queen
-1976|Elton John & Kiki Dee|Don't Go Breaking My Heart
-1977|Bee Gees|Stayin' Alive
-1977|Fleetwood Mac|Go Your Own Way
-1977|Donna Summer|I Feel Love
-1977|Queen|We Will Rock You
-1978|Boney M.|Rivers of Babylon
-1978|Gloria Gaynor|I Will Survive
-1978|Village People|Y.M.C.A.
-1978|Kate Bush|Wuthering Heights
-1978|Earth, Wind & Fire|September
-1979|Pink Floyd|Another Brick in the Wall (Part 2)
-1979|The Buggles|Video Killed the Radio Star
-1979|Michael Jackson|Don't Stop 'Til You Get Enough
-1979|Dschinghis Khan|Dschinghis Khan
-1979|Chic|Good Times
-1980|AC/DC|Back in Black
-1980|Queen|Another One Bites the Dust
-1980|Blondie|Call Me
-1981|Kim Wilde|Kids in America
-1981|Depeche Mode|Just Can't Get Enough
-1981|Spider Murphy Gang|Skandal im Sperrbezirk
-1982|Survivor|Eye of the Tiger
-1982|Trio|Da Da Da
-1982|Toto|Africa
-1982|Markus|Ich will Spaß
-1983|Michael Jackson|Billie Jean
-1983|Nena|99 Luftballons
-1983|Eurythmics|Sweet Dreams (Are Made of This)
-1983|Peter Schilling|Major Tom (Völlig losgelöst)
-1983|Cyndi Lauper|Girls Just Want to Have Fun
-1984|Wham!|Wake Me Up Before You Go-Go
-1984|Prince|Purple Rain
-1984|Herbert Grönemeyer|Männer
-1984|Alphaville|Forever Young
-1984|Band Aid|Do They Know It's Christmas?
-1984|Bruce Springsteen|Dancing in the Dark
-1984|Tina Turner|What's Love Got to Do with It
-1984|Modern Talking|You're My Heart, You're My Soul
-1985|a-ha|Take On Me
-1985|Dire Straits|Money for Nothing
-1985|Falco|Rock Me Amadeus
-1986|Bon Jovi|Livin' on a Prayer
-1986|Europe|The Final Countdown
-1986|Peter Gabriel|Sledgehammer
-1986|Madonna|Papa Don't Preach
-1987|Rick Astley|Never Gonna Give You Up
-1987|Whitney Houston|I Wanna Dance with Somebody
-1987|Michael Jackson|Bad
-1988|Guns N' Roses|Sweet Child o' Mine
-1988|Bobby McFerrin|Don't Worry, Be Happy
-1988|Tracy Chapman|Fast Car
-1989|Madonna|Like a Prayer
-1989|Roxette|The Look
-1989|Technotronic|Pump Up the Jam
-1989|Tina Turner|The Best
-1990|MC Hammer|U Can't Touch This
-1990|Sinéad O'Connor|Nothing Compares 2 U
-1990|Snap!|The Power
-1991|Nirvana|Smells Like Teen Spirit
-1991|R.E.M.|Losing My Religion
-1991|Bryan Adams|(Everything I Do) I Do It for You
-1991|Scorpions|Wind of Change
-1992|Whitney Houston|I Will Always Love You
-1992|Die Fantastischen Vier|Die Da!?!
-1992|Dr. Alban|It's My Life
-1992|Eric Clapton|Tears in Heaven
-1992|Snap!|Rhythm Is a Dancer
-1993|4 Non Blondes|What's Up?
-1993|Haddaway|What Is Love
-1993|Meat Loaf|I'd Do Anything for Love (But I Won't Do That)
-1994|Mariah Carey|All I Want for Christmas Is You
-1994|Scatman John|Scatman (Ski-Ba-Bop-Ba-Dop-Bop)
-1994|Lucilectric|Mädchen
-1995|Coolio|Gangsta's Paradise
-1995|Oasis|Wonderwall
-1995|TLC|Waterfalls
-1995|Michael Jackson|Earth Song
-1996|Spice Girls|Wannabe
-1996|Fugees|Killing Me Softly
-1996|Mr. President|Coco Jamboo
-1997|Aqua|Barbie Girl
-1997|The Verve|Bitter Sweet Symphony
-1997|Hanson|MMMBop
-1997|Puff Daddy feat. Faith Evans|I'll Be Missing You
-1997|Céline Dion|My Heart Will Go On
-1997|Backstreet Boys|As Long as You Love Me
-1998|Britney Spears|...Baby One More Time
-1998|Cher|Believe
-1999|Lou Bega|Mambo No. 5 (A Little Bit of...)
-1999|Ricky Martin|Livin' la Vida Loca
-1999|Christina Aguilera|Genie in a Bottle
-1999|TLC|No Scrubs
-2000|Eminem|The Real Slim Shady
-2000|Modjo|Lady (Hear Me Tonight)
-2000|Daft Punk|One More Time
-2000|Britney Spears|Oops!... I Did It Again
-2001|Shakira|Whenever, Wherever
-2001|Kylie Minogue|Can't Get You Out of My Head
-2001|Linkin Park|In the End
-2002|Eminem|Lose Yourself
-2002|Avril Lavigne|Complicated
-2002|Las Ketchup|The Ketchup Song (Aserejé)
-2003|Beyoncé|Crazy in Love
-2003|OutKast|Hey Ya!
-2003|The Black Eyed Peas|Where Is the Love?
-2004|Usher|Yeah!
-2004|Green Day|American Idiot
-2004|Kelly Clarkson|Since U Been Gone
-2005|Gorillaz|Feel Good Inc.
-2005|Daniel Powter|Bad Day
-2005|Tokio Hotel|Durch den Monsun
-2005|Wir sind Helden|Nur ein Wort
-2006|Gnarls Barkley|Crazy
-2006|Shakira|Hips Don't Lie
-2006|Amy Winehouse|Rehab
-2006|Sportfreunde Stiller|'54, '74, '90, 2006
-2006|Justin Timberlake|SexyBack
-2006|Nelly Furtado|Maneater
-2007|Rihanna|Umbrella
-2007|Timbaland feat. OneRepublic|Apologize
-2008|Lady Gaga|Poker Face
-2008|Katy Perry|I Kissed a Girl
-2008|Coldplay|Viva la Vida
-2008|Kings of Leon|Sex on Fire
-2008|Peter Fox|Alles neu
-2008|Duffy|Mercy
-2009|The Black Eyed Peas|I Gotta Feeling
-2009|Lady Gaga|Bad Romance
-2009|Taylor Swift|You Belong with Me
-2010|Lena|Satellite
-2010|Katy Perry|California Gurls
-2010|Bruno Mars|Grenade
-2011|Adele|Someone Like You
-2011|LMFAO|Party Rock Anthem
-2011|Gotye|Somebody That I Used to Know
-2012|PSY|Gangnam Style
-2012|Cro|Easy
-2012|Macklemore & Ryan Lewis|Thrift Shop
-2013|Daft Punk|Get Lucky
-2013|Avicii|Wake Me Up
-2013|Pharrell Williams|Happy
-2013|Helene Fischer|Atemlos durch die Nacht
-2014|Taylor Swift|Shake It Off
-2014|Mark Ronson feat. Bruno Mars|Uptown Funk
-2014|Andreas Bourani|Auf uns
-2014|Sam Smith|Stay with Me
-2015|Adele|Hello
-2015|Major Lazer & DJ Snake|Lean On
-2015|Twenty One Pilots|Stressed Out
-2016|The Chainsmokers feat. Halsey|Closer
-2016|Drake|One Dance
-2017|Ed Sheeran|Shape of You
-2017|Luis Fonsi feat. Daddy Yankee|Despacito
-2017|Imagine Dragons|Believer
-2017|Camila Cabello|Havana
-2017|Dua Lipa|New Rules
-2018|Ariana Grande|thank u, next
-2019|Billie Eilish|bad guy
-2019|The Weeknd|Blinding Lights
-2020|Dua Lipa|Levitating
-2020|BTS|Dynamite
-2020|Jason Derulo|Savage Love
-2021|Olivia Rodrigo|drivers license
-2021|Lil Nas X|MONTERO (Call Me by Your Name)
-2021|Ed Sheeran|Bad Habits
-2021|The Kid LAROI & Justin Bieber|STAY
-2022|Harry Styles|As It Was
-2022|Lizzo|About Damn Time
-2022|Nina Chuba|Wildberry Lillet
-2023|Miley Cyrus|Flowers
-2023|Doja Cat|Paint the Town Red
-2023|Tate McRae|greedy
-2024|Sabrina Carpenter|Espresso
-2024|Chappell Roan|Good Luck, Babe!
-2024|Billie Eilish|Birds of a Feather
-2024|Lady Gaga & Bruno Mars|Die with a Smile
-2024|Benson Boone|Beautiful Things
-2024|ROSÉ & Bruno Mars|APT.
-2025|Alex Warren|Ordinary`;
+// Jahr | Interpret | Titel | Genres  (Jahr der Single-Veröffentlichung)
+// R Rock · P Pop · D Dance & Elektro · H Hip-Hop & R&B · S Soul, Funk & Disco · K Schlager · G deutschsprachig
+const RAW = `1956|Elvis Presley|Heartbreak Hotel|R
+1957|Elvis Presley|Jailhouse Rock|R
+1958|Chuck Berry|Johnny B. Goode|R
+1958|Ritchie Valens|La Bamba|R
+1960|Elvis Presley|It's Now or Never|P
+1960|Lale Andersen|Ein Schiff wird kommen|KG
+1961|Ben E. King|Stand by Me|S
+1962|Ray Charles|I Can't Stop Loving You|S
+1963|The Beatles|She Loves You|PR
+1964|The Beatles|A Hard Day's Night|PR
+1964|The Animals|The House of the Rising Sun|R
+1964|Roy Orbison|Oh, Pretty Woman|R
+1964|The Supremes|Baby Love|S
+1965|The Rolling Stones|(I Can't Get No) Satisfaction|R
+1965|Bob Dylan|Like a Rolling Stone|R
+1965|Drafi Deutscher|Marmor, Stein und Eisen bricht|KG
+1966|The Beach Boys|Good Vibrations|P
+1966|Nancy Sinatra|These Boots Are Made for Walkin'|P
+1966|Roy Black|Ganz in Weiß|KG
+1966|Udo Jürgens|Merci, Chérie|KG
+1967|Procol Harum|A Whiter Shade of Pale|R
+1967|Aretha Franklin|Respect|S
+1967|The Doors|Light My Fire|R
+1967|Marvin Gaye & Tammi Terrell|Ain't No Mountain High Enough|S
+1968|The Beatles|Hey Jude|PR
+1968|Simon & Garfunkel|Mrs. Robinson|P
+1968|Steppenwolf|Born to Be Wild|R
+1968|Otis Redding|(Sittin' On) The Dock of the Bay|S
+1969|The Beatles|Come Together|R
+1969|Elvis Presley|In the Ghetto|P
+1969|Creedence Clearwater Revival|Proud Mary|R
+1970|Simon & Garfunkel|Bridge over Troubled Water|P
+1970|The Jackson 5|ABC|S
+1970|Black Sabbath|Paranoid|R
+1970|James Brown|Get Up (I Feel Like Being a) Sex Machine|S
+1970|Wencke Myhre|Er hat ein knallrotes Gummiboot|KG
+1971|John Lennon|Imagine|P
+1971|Marvin Gaye|What's Going On|S
+1971|Don McLean|American Pie|P
+1972|Bill Withers|Lean on Me|S
+1972|Alice Cooper|School's Out|R
+1972|Stevie Wonder|Superstition|S
+1973|Pink Floyd|Money|R
+1973|Deep Purple|Smoke on the Water|R
+1974|ABBA|Waterloo|P
+1974|Carl Douglas|Kung Fu Fighting|S
+1974|Kraftwerk|Autobahn|DG
+1974|Udo Jürgens|Griechischer Wein|KG
+1974|Lynyrd Skynyrd|Sweet Home Alabama|R
+1974|Vicky Leandros|Theo, wir fahr'n nach Lodz|KG
+1975|Queen|Bohemian Rhapsody|R
+1975|ABBA|Mamma Mia|P
+1975|Bruce Springsteen|Born to Run|R
+1975|10cc|I'm Not in Love|P
+1975|Aerosmith|Walk This Way|R
+1976|ABBA|Dancing Queen|PS
+1976|Elton John & Kiki Dee|Don't Go Breaking My Heart|P
+1976|Boston|More Than a Feeling|R
+1976|Wild Cherry|Play That Funky Music|S
+1976|Udo Jürgens|Aber bitte mit Sahne|KG
+1977|Bee Gees|Stayin' Alive|S
+1977|Fleetwood Mac|Go Your Own Way|R
+1977|Donna Summer|I Feel Love|SD
+1977|Queen|We Will Rock You|R
+1977|Eagles|Hotel California|R
+1977|Sex Pistols|God Save the Queen|R
+1977|Stevie Wonder|Sir Duke|S
+1978|Boney M.|Rivers of Babylon|S
+1978|Gloria Gaynor|I Will Survive|S
+1978|Village People|Y.M.C.A.|S
+1978|Kate Bush|Wuthering Heights|P
+1978|Earth, Wind & Fire|September|S
+1978|Dire Straits|Sultans of Swing|R
+1979|Pink Floyd|Another Brick in the Wall (Part 2)|R
+1979|The Buggles|Video Killed the Radio Star|P
+1979|Michael Jackson|Don't Stop 'Til You Get Enough|S
+1979|Dschinghis Khan|Dschinghis Khan|KG
+1979|Chic|Good Times|S
+1979|Sister Sledge|We Are Family|S
+1979|The Clash|London Calling|R
+1979|AC/DC|Highway to Hell|R
+1979|The Sugarhill Gang|Rapper's Delight|H
+1980|AC/DC|Back in Black|R
+1980|Queen|Another One Bites the Dust|RS
+1980|Blondie|Call Me|R
+1980|Joy Division|Love Will Tear Us Apart|R
+1980|Diana Ross|Upside Down|S
+1980|Roland Kaiser|Santa Maria|KG
+1981|Kim Wilde|Kids in America|P
+1981|Depeche Mode|Just Can't Get Enough|PD
+1981|Spider Murphy Gang|Skandal im Sperrbezirk|RG
+1981|Journey|Don't Stop Believin'|R
+1981|BAP|Verdamp lang her|RG
+1982|Survivor|Eye of the Tiger|R
+1982|Trio|Da Da Da|PG
+1982|Toto|Africa|PR
+1982|Markus|Ich will Spaß|PG
+1982|Nicole|Ein bißchen Frieden|KG
+1982|The Clash|Should I Stay or Should I Go|R
+1983|Michael Jackson|Billie Jean|P
+1983|Nena|99 Luftballons|PG
+1983|Eurythmics|Sweet Dreams (Are Made of This)|PD
+1983|Peter Schilling|Major Tom (Völlig losgelöst)|PG
+1983|Cyndi Lauper|Girls Just Want to Have Fun|P
+1983|The Police|Every Breath You Take|R
+1983|New Order|Blue Monday|D
+1983|Udo Lindenberg|Sonderzug nach Pankow|RG
+1983|Wolfgang Petry|Wahnsinn|KG
+1984|Wham!|Wake Me Up Before You Go-Go|P
+1984|Prince|Purple Rain|PR
+1984|Herbert Grönemeyer|Männer|PRG
+1984|Alphaville|Forever Young|P
+1984|Band Aid|Do They Know It's Christmas?|P
+1984|Bruce Springsteen|Dancing in the Dark|R
+1984|Tina Turner|What's Love Got to Do with It|P
+1984|Modern Talking|You're My Heart, You're My Soul|PD
+1984|Van Halen|Jump|R
+1985|a-ha|Take On Me|P
+1985|Dire Straits|Money for Nothing|R
+1985|Falco|Rock Me Amadeus|PG
+1985|Simple Minds|Don't You (Forget About Me)|R
+1986|Bon Jovi|Livin' on a Prayer|R
+1986|Europe|The Final Countdown|R
+1986|Peter Gabriel|Sledgehammer|P
+1986|Madonna|Papa Don't Preach|P
+1986|Run-D.M.C. feat. Aerosmith|Walk This Way|HR
+1987|Rick Astley|Never Gonna Give You Up|P
+1987|Whitney Houston|I Wanna Dance with Somebody|P
+1987|Michael Jackson|Bad|P
+1987|U2|With or Without You|R
+1987|Def Leppard|Pour Some Sugar on Me|R
+1988|Guns N' Roses|Sweet Child o' Mine|R
+1988|Bobby McFerrin|Don't Worry, Be Happy|P
+1988|Tracy Chapman|Fast Car|P
+1989|Madonna|Like a Prayer|P
+1989|Roxette|The Look|PR
+1989|Technotronic|Pump Up the Jam|D
+1989|Tina Turner|The Best|PR
+1989|The Cure|Lovesong|R
+1990|MC Hammer|U Can't Touch This|H
+1990|Sinéad O'Connor|Nothing Compares 2 U|P
+1990|Snap!|The Power|DH
+1990|Vanilla Ice|Ice Ice Baby|H
+1990|Deee-Lite|Groove Is in the Heart|D
+1990|Matthias Reim|Verdammt, ich lieb' dich|KG
+1991|Nirvana|Smells Like Teen Spirit|R
+1991|R.E.M.|Losing My Religion|R
+1991|Bryan Adams|(Everything I Do) I Do It for You|PR
+1991|Scorpions|Wind of Change|R
+1991|Metallica|Enter Sandman|R
+1992|Whitney Houston|I Will Always Love You|P
+1992|Die Fantastischen Vier|Die Da!?!|HG
+1992|Dr. Alban|It's My Life|D
+1992|Eric Clapton|Tears in Heaven|P
+1992|Snap!|Rhythm Is a Dancer|D
+1992|Red Hot Chili Peppers|Under the Bridge|R
+1992|Rage Against the Machine|Killing in the Name|R
+1993|4 Non Blondes|What's Up?|R
+1993|Haddaway|What Is Love|D
+1993|Meat Loaf|I'd Do Anything for Love (But I Won't Do That)|R
+1993|Dr. Dre feat. Snoop Doggy Dogg|Nuthin' but a 'G' Thang|H
+1993|Die Ärzte|Schrei nach Liebe|RG
+1994|Mariah Carey|All I Want for Christmas Is You|P
+1994|Scatman John|Scatman (Ski-Ba-Bop-Ba-Dop-Bop)|D
+1994|Lucilectric|Mädchen|PG
+1994|The Cranberries|Zombie|R
+1994|Green Day|Basket Case|R
+1995|Coolio|Gangsta's Paradise|H
+1995|Oasis|Wonderwall|R
+1995|TLC|Waterfalls|H
+1995|Michael Jackson|Earth Song|P
+1995|Alanis Morissette|You Oughta Know|R
+1995|Faithless|Insomnia|D
+1996|Spice Girls|Wannabe|P
+1996|Fugees|Killing Me Softly|H
+1996|Mr. President|Coco Jamboo|D
+1997|Aqua|Barbie Girl|PD
+1997|The Verve|Bitter Sweet Symphony|R
+1997|Hanson|MMMBop|P
+1997|Puff Daddy feat. Faith Evans|I'll Be Missing You|H
+1997|Céline Dion|My Heart Will Go On|P
+1997|Backstreet Boys|As Long as You Love Me|P
+1997|Radiohead|Karma Police|R
+1997|Rammstein|Du hast|RG
+1998|Britney Spears|...Baby One More Time|P
+1998|Cher|Believe|PD
+1998|The Offspring|Pretty Fly (for a White Guy)|R
+1998|Lauryn Hill|Doo Wop (That Thing)|H
+1998|ATB|9 PM (Till I Come)|D
+1999|Lou Bega|Mambo No. 5 (A Little Bit of...)|P
+1999|Ricky Martin|Livin' la Vida Loca|P
+1999|Christina Aguilera|Genie in a Bottle|P
+1999|TLC|No Scrubs|H
+1999|Red Hot Chili Peppers|Scar Tissue|R
+1999|Alice Deejay|Better Off Alone|D
+2000|Eminem|The Real Slim Shady|H
+2000|Modjo|Lady (Hear Me Tonight)|D
+2000|Daft Punk|One More Time|D
+2000|Britney Spears|Oops!... I Did It Again|P
+2001|Shakira|Whenever, Wherever|P
+2001|Kylie Minogue|Can't Get You Out of My Head|PD
+2001|Linkin Park|In the End|R
+2001|The Strokes|Last Nite|R
+2001|Rammstein|Sonne|RG
+2001|Andrea Berg|Du hast mich tausendmal belogen|KG
+2002|Eminem|Lose Yourself|H
+2002|Avril Lavigne|Complicated|P
+2002|Las Ketchup|The Ketchup Song (Aserejé)|P
+2002|Red Hot Chili Peppers|By the Way|R
+2002|Nelly feat. Kelly Rowland|Dilemma|H
+2003|Beyoncé|Crazy in Love|H
+2003|OutKast|Hey Ya!|H
+2003|The Black Eyed Peas|Where Is the Love?|H
+2003|The White Stripes|Seven Nation Army|R
+2003|Evanescence|Bring Me to Life|R
+2003|50 Cent|In da Club|H
+2004|Usher|Yeah!|H
+2004|Green Day|American Idiot|R
+2004|Kelly Clarkson|Since U Been Gone|P
+2004|Franz Ferdinand|Take Me Out|R
+2004|Eric Prydz|Call on Me|D
+2005|Gorillaz|Feel Good Inc.|HR
+2005|Daniel Powter|Bad Day|P
+2005|Tokio Hotel|Durch den Monsun|RG
+2005|Wir sind Helden|Nur ein Wort|RG
+2005|Foo Fighters|Best of You|R
+2005|Arctic Monkeys|I Bet You Look Good on the Dancefloor|R
+2006|Gnarls Barkley|Crazy|S
+2006|Shakira|Hips Don't Lie|P
+2006|Amy Winehouse|Rehab|S
+2006|Sportfreunde Stiller|'54, '74, '90, 2006|RG
+2006|Justin Timberlake|SexyBack|P
+2006|Nelly Furtado|Maneater|P
+2007|Rihanna|Umbrella|PH
+2007|Timbaland feat. OneRepublic|Apologize|P
+2007|Foo Fighters|The Pretender|R
+2007|Kanye West|Stronger|H
+2007|DJ Ötzi & Nik P.|Ein Stern (...der deinen Namen trägt)|KG
+2008|Lady Gaga|Poker Face|PD
+2008|Katy Perry|I Kissed a Girl|P
+2008|Coldplay|Viva la Vida|P
+2008|Kings of Leon|Sex on Fire|R
+2008|Peter Fox|Alles neu|HG
+2008|Duffy|Mercy|S
+2009|The Black Eyed Peas|I Gotta Feeling|PD
+2009|Lady Gaga|Bad Romance|PD
+2009|Taylor Swift|You Belong with Me|P
+2010|Lena|Satellite|P
+2010|Katy Perry|California Gurls|P
+2010|Bruno Mars|Grenade|P
+2010|Eminem feat. Rihanna|Love the Way You Lie|H
+2011|Adele|Someone Like You|P
+2011|LMFAO|Party Rock Anthem|D
+2011|Gotye|Somebody That I Used to Know|P
+2011|David Guetta feat. Sia|Titanium|D
+2012|PSY|Gangnam Style|P
+2012|Cro|Easy|HG
+2012|Macklemore & Ryan Lewis|Thrift Shop|H
+2012|Imagine Dragons|Radioactive|R
+2012|Die Toten Hosen|Tage wie diese|RG
+2012|Sido|Bilder im Kopf|HG
+2013|Daft Punk|Get Lucky|DS
+2013|Avicii|Wake Me Up|D
+2013|Pharrell Williams|Happy|PS
+2013|Helene Fischer|Atemlos durch die Nacht|KG
+2013|Arctic Monkeys|Do I Wanna Know?|R
+2014|Taylor Swift|Shake It Off|P
+2014|Mark Ronson feat. Bruno Mars|Uptown Funk|PS
+2014|Andreas Bourani|Auf uns|PG
+2014|Sam Smith|Stay with Me|P
+2014|Robin Schulz|Prayer in C|D
+2015|Adele|Hello|P
+2015|Major Lazer & DJ Snake|Lean On|D
+2015|Twenty One Pilots|Stressed Out|P
+2015|Alan Walker|Faded|D
+2016|The Chainsmokers feat. Halsey|Closer|D
+2016|Drake|One Dance|H
+2017|Ed Sheeran|Shape of You|P
+2017|Luis Fonsi feat. Daddy Yankee|Despacito|P
+2017|Imagine Dragons|Believer|R
+2017|Camila Cabello|Havana|P
+2017|Dua Lipa|New Rules|P
+2018|Ariana Grande|thank u, next|P
+2018|Drake|God's Plan|H
+2019|Billie Eilish|bad guy|P
+2019|The Weeknd|Blinding Lights|PD
+2020|Dua Lipa|Levitating|PD
+2020|BTS|Dynamite|P
+2020|Jason Derulo|Savage Love|P
+2021|Olivia Rodrigo|drivers license|P
+2021|Lil Nas X|MONTERO (Call Me by Your Name)|PH
+2021|Ed Sheeran|Bad Habits|P
+2021|The Kid LAROI & Justin Bieber|STAY|P
+2021|Måneskin|Zitti e buoni|R
+2022|Harry Styles|As It Was|P
+2022|Lizzo|About Damn Time|PS
+2022|Nina Chuba|Wildberry Lillet|HG
+2023|Miley Cyrus|Flowers|P
+2023|Doja Cat|Paint the Town Red|H
+2023|Tate McRae|greedy|P
+2023|SZA|Kill Bill|H
+2024|Sabrina Carpenter|Espresso|P
+2024|Chappell Roan|Good Luck, Babe!|P
+2024|Billie Eilish|Birds of a Feather|P
+2024|Lady Gaga & Bruno Mars|Die with a Smile|P
+2024|Benson Boone|Beautiful Things|P
+2024|ROSÉ & Bruno Mars|APT.|P
+2024|Kendrick Lamar|Not Like Us|H
+2025|Alex Warren|Ordinary|P`;
 
-const SONGS = RAW.split('\n').map(l => { const [y, a, t] = l.split('|'); return { y: +y, a, t }; });
+const SONGS = RAW.split('\n').map(l => { const [y, a, t, g] = l.split('|'); return { y: +y, a, t, g }; });
+const GENRES = [['R', 'Rock'], ['P', 'Pop'], ['D', 'Dance & Elektro'], ['H', 'Hip-Hop & R&B'], ['S', 'Soul, Funk & Disco'], ['K', 'Schlager'], ['G', 'Deutschsprachig']];
+const genreName = gs => gs.length ? gs.map(g => GENRES.find(x => x[0] === g)[1]).join(' + ') : 'Alle Genres';
+// no genre picked means all songs; several genres combine (Rock + Pop = every song that is either)
+const pool = gs => SONGS.map((_, i) => i).filter(i => !gs.length || gs.some(g => SONGS[i].g.includes(g)));
 const PCOL = ['#ffd23f', '#5ce1e6', '#ff7ab6', '#9b8cff', '#3ddc97', '#ff9f43', '#f5f5f5', '#ff5d73'];
 const START_TOKENS = 2, MAX_TOKENS = 5;
 const KEY = 'hitlinie-v1';
@@ -452,14 +550,15 @@ function freshSetup(prev) {
     names: prev?.names || ['Spieler 1', 'Spieler 2'],
     target: prev?.target || 10,
     blind: prev?.blind ?? false,
+    genres: prev?.genres || [],
   };
 }
 
 function startGame() {
   const names = S.names.map((n, i) => n.trim() || `Spieler ${i + 1}`);
-  const deck = shuffle(SONGS.map((_, i) => i));
+  const deck = shuffle(pool(S.genres));
   const players = names.map(name => ({ name, cards: [deck.pop()], tokens: START_TOKENS }));
-  S = { screen: 'game', names, target: S.target, blind: S.blind, players, deck, current: 0, round: 1 };
+  S = { screen: 'game', names, target: S.target, blind: S.blind, genres: S.genres, players, deck, current: 0, round: 1 };
   newTurn(true);
 }
 
@@ -512,6 +611,8 @@ function render() {
 function renderSetup() {
   const saved = load();
   const canResume = saved && saved.screen === 'game';
+  const count = pool(S.genres).length;
+  const short = count < S.names.length + 5;
   $app.innerHTML = `
   <div class="setup wrap">
     <div class="brand">
@@ -546,12 +647,20 @@ function renderSetup() {
       </div>
     </div>
     <div class="panel">
+      <h2>Genre</h2>
+      <div class="genres">
+        <button data-act="genre" data-v="" aria-pressed="${!S.genres.length}">Alle</button>
+        ${GENRES.map(([k, n]) => `<button data-act="genre" data-v="${k}" aria-pressed="${S.genres.includes(k)}">${esc(n)}</button>`).join('')}
+      </div>
+      <p class="pool-info ${short ? 'warn' : ''}">${count} Songs${S.genres.length > 1 ? ' (mehrere Genres werden kombiniert)' : ''}${short ? ` · Zu wenige für ${S.names.length} Spieler, wählt ein weiteres Genre dazu.` : count < S.names.length * S.target * 2 ? ' · Tipp: weniger Karten zum Sieg wählen.' : ''}</p>
+    </div>
+    <div class="panel">
       <h2>Karten zum Sieg</h2>
       <div class="seg three">
         ${[5, 10, 15].map(n => `<button data-act="target" data-v="${n}" aria-pressed="${S.target === n}"><strong>${n}</strong></button>`).join('')}
       </div>
     </div>
-    <button class="btn primary" data-act="start">Spiel starten</button>
+    <button class="btn primary" data-act="start" ${short ? 'disabled' : ''}>Spiel starten</button>
     <details class="help">
       <summary>So wird gespielt</summary>
       <ol>
@@ -571,7 +680,7 @@ function renderSetup() {
         <li>Ein laufendes Spiel wird auf diesem Gerät gespeichert und lässt sich später fortsetzen.</li>
       </ul>
     </details>
-    <p class="eyebrow" style="text-align:center">${SONGS.length} Songs · 1956 bis 2025</p>
+    <p class="eyebrow" style="text-align:center">${SONGS.length} Songs insgesamt · 1956 bis 2025</p>
   </div>`;
 }
 
@@ -739,7 +848,7 @@ function renderGame() {
   $app.innerHTML = `
   <header class="top wrap">
     <div class="turn">
-      <div><div class="eyebrow">Am Zug · noch ${S.deck.length} Songs</div><h2 style="color:${PCOL[S.current % PCOL.length]}">${esc(p.name)}</h2></div>
+      <div><div class="eyebrow">Am Zug · ${esc(genreName(S.genres || []))} · noch ${S.deck.length}</div><h2 style="color:${PCOL[S.current % PCOL.length]}">${esc(p.name)}</h2></div>
       <button class="btn small" data-act="menu" aria-label="Menü">Menü</button>
     </div>
     <div class="scores">${chips()}</div>
@@ -810,6 +919,10 @@ $app.addEventListener('click', e => {
     case 'del': S.names.splice(i, 1); break;
     case 'mode': S.blind = v === '1'; break;
     case 'target': S.target = +v; break;
+    case 'genre':
+      if (!v) S.genres = [];
+      else S.genres = S.genres.includes(v) ? S.genres.filter(g => g !== v) : [...S.genres, v];
+      break;
     case 'start': startGame(); break;
     case 'resume': S = load(); break;
     case 'slot':
