@@ -1,4 +1,5 @@
-// Offline support: app files cache-first, Google Fonts cached as they are fetched.
+// Offline support: the app's own files come from the network first so updates show up at once,
+// the cached copy is only used offline; Google Fonts are cache-first since they never change.
 const CACHE = 'hitlinie-__BUILD__';
 const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
@@ -18,11 +19,14 @@ self.addEventListener('fetch', e => {
   const same = url.origin === location.origin;
   const font = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!same && !font) return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: same }).then(hit => {
-    const net = fetch(e.request).then(res => {
-      if (res.ok || res.type === 'opaque') caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-      return res;
-    });
-    return hit || net;
-  }));
+  const store = res => {
+    if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
+    return res;
+  };
+  if (font) {
+    e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request).then(store)));
+    return;
+  }
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(store)
+    .catch(() => caches.match(e.request, { ignoreSearch: true }).then(hit => hit || caches.match('./index.html'))));
 });

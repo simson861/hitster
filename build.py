@@ -11,7 +11,7 @@ root = pathlib.Path(__file__).parent
 src = (root / 'hitlinie.html').read_text(encoding='utf-8')
 head_part, body_part = src.split('<style>', 1)
 body_part = '<style>' + body_part
-build = hashlib.sha1(src.encode()).hexdigest()[:10]
+build = hashlib.sha1((src + (root / 'sw.template.js').read_text(encoding='utf-8') + pathlib.Path(__file__).read_text(encoding='utf-8')).encode()).hexdigest()[:10]
 
 page = f"""<!doctype html>
 <html lang="de">
@@ -31,7 +31,15 @@ body {{ margin: 0; }}
 <body>
 {body_part.strip()}
 <script>
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {{}}));
+// reload once when an updated service worker takes over, so the new version shows without a second launch
+if ('serviceWorker' in navigator) {{
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {{
+    if (hadController && !reloaded) {{ reloaded = true; location.reload(); }}
+  }});
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js', {{ updateViaCache: 'none' }}).catch(() => {{}}));
+}}
 </script>
 </body>
 </html>
